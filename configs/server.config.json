@@ -1,0 +1,14 @@
+{
+  "Logging": {
+    "LogLevel": "INFO"
+  },
+  "HttpServing": {
+    "BindAddress": ":7080"
+  },
+  "DataBase": {
+    "DatabaseDsn": "postgres://postgres:postgres@localhost:5432/pandora"
+  },
+  "Security": {
+    "key": "1"
+  }
+}

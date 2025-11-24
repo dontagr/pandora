@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": "INFO"
+  },
+  "Transport": {
+    "WaitForRetry": 2
+  },
+  "HttpServing": {
+    "Host": "http://localhost:7080/"
+  },
+  "DataBase": {
+    "Path": "pandora.db"
+  },
+  "Crypto": {
+    "PublicKey": "/Users/sastepo1/.ssh/jwtRS256.key.pem",
+    "PrivateKey": "/Users/sastepo1/.ssh/jwtRS256.key"
+  }
+}
