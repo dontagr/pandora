@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/dontagr/pandora/internal/agent/service/store"
 	"github.com/dontagr/pandora/internal/server/service/customerror"
 	"github.com/dontagr/pandora/internal/server/service/user"
 
@@ -15,18 +16,21 @@ type (
 	Handler struct {
 		log      *zap.SugaredLogger
 		uService *user.Service
+		sService *store.Service
 		jwt      *jwt.JWTService
 	}
 )
 
 func NewHandler(
 	uService *user.Service,
+	sService *store.Service,
 	log *zap.SugaredLogger,
 	jwtService *jwt.JWTService,
 ) *Handler {
 	h := &Handler{
 		log:      log,
 		uService: uService,
+		sService: sService,
 		jwt:      jwtService,
 	}
 

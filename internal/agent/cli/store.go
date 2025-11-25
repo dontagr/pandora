@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/spf13/cobra"
@@ -80,13 +81,25 @@ Files up to 1 MB are allowed.
 				return
 			}
 
-			cmd.Println(reqStoreSave.Data)
-
 			reqStoreSave, err = service.Encrypt(reqStoreSave)
 			if err != nil {
+				redPrint(cmd, err.Error())
 				return
 			}
-			cmd.Println(reqStoreSave.Data)
+
+			req, err := client.PreparationReq(reqStoreSave)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSave, true)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			fmt.Println(respoce)
 
 			cmd.Println("Try to save from store")
 		},

@@ -50,6 +50,10 @@ func (m *Kind) ValidateLabel(label string) error {
 		return fmt.Errorf("label is required")
 	}
 
+	if len(label) > 255 {
+		return fmt.Errorf("label len more than 256")
+	}
+
 	return nil
 }
 

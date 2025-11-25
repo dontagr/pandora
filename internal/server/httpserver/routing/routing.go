@@ -28,7 +28,7 @@ func InitRouting(
 	g.POST("/login", handler.SignIn)
 
 	s := server.Master.Group("/api/store")
-	s.GET("/test", handler.Test, jwt.GetMiddleware(jwtConfig))
+	s.POST("/save", handler.Save, jwt.GetMiddleware(jwtConfig))
 
 	return nil
 }

@@ -4,6 +4,7 @@ const (
 	UrlUserSignUP = "api/user/register"
 	UrlUserLogin  = "api/user/login"
 	UrlTest       = "api/store/test"
+	UrlStoreSave  = "api/store/save"
 
 	KindAuth   = "auth"
 	KindText   = "text"
@@ -13,9 +14,9 @@ const (
 
 type (
 	RequestStoreSave struct {
-		Kind  string
-		Data  any
-		Label string
+		Kind  string `json:"kind"`
+		Data  any    `json:"data"`
+		Label string `json:"label"`
 	}
 	RequestUser struct {
 		Login    string `json:"login" validate:"required,alphanum|email"`
