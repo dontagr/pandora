@@ -13,6 +13,7 @@ const (
 	UrlStoreList   = "api/store/list"
 	UrlStoreLoad   = "api/store/load"
 	UrlStoreDelete = "api/store/delete"
+	UrlStoreSync   = "api/store/sync"
 
 	KindAuth   = "auth"
 	KindText   = "text"
@@ -29,6 +30,9 @@ type (
 		Label   string    `json:"label"`
 		Version int       `json:"version"`
 	}
+	ResponceSync struct {
+		Version int `json:"version"`
+	}
 	ResponceStoreLoad struct {
 		DT         time.Time         `json:"dt"`
 		ReveryData map[string]string `json:"-"`
@@ -38,6 +42,16 @@ type (
 		Meta       string            `json:"meta"`
 		Version    int               `json:"version"`
 	}
+	RequestSyncList struct {
+		List []SyncNode `json:"list"`
+	}
+	SyncNode struct {
+		Kind    string `json:"kind"`
+		Label   string `json:"label"`
+		Data    string `json:"data"`
+		Meta    string `json:"meta"`
+		Version int    `json:"version"`
+	}
 	RequestStoreLoad struct {
 		Kind  string `json:"kind"`
 		Label string `json:"label"`
@@ -46,10 +60,11 @@ type (
 		Kind string `json:"kind"`
 	}
 	RequestStoreSave struct {
-		Kind  string `json:"kind"`
-		Data  any    `json:"data"`
-		Meta  string `json:"meta"`
-		Label string `json:"label"`
+		Kind    string `json:"kind"`
+		Data    any    `json:"data"`
+		Meta    string `json:"meta"`
+		Label   string `json:"label"`
+		Version int    `json:"version"`
 	}
 	RequestUser struct {
 		Login    string `json:"login" validate:"required,alphanum|email"`

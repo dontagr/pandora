@@ -51,8 +51,8 @@ func (u *Service) GetSecret(userId int, kind string, label string) (*models.Secr
 	return u.store.GetSecret(userId, kind, label)
 }
 
-func (u *Service) SaveSecret(userId int, kind string, label string, data string, meta string) error {
-	return u.store.SaveSecret(userId, kind, label, data, meta)
+func (u *Service) SaveSecret(userId int, kind string, label string, data string, meta string, version int) error {
+	return u.store.SaveSecret(userId, kind, label, data, meta, version)
 }
 
 func (u *Service) DeleteSecret(userId int, kind string, label string) error {

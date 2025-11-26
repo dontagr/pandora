@@ -13,6 +13,6 @@ type (
 		GetSecret(userId int, kind string, label string) (*models.Secret, error)
 		GetListSecret(userId int, kind string) (*models.SecretList, error)
 		DeleteSecret(userId int, kind string, label string) error
-		SaveSecret(userId int, kind string, label string, data string, meta string) error
+		SaveSecret(userId int, kind string, label string, data string, meta string, version int) error
 	}
 )

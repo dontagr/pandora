@@ -17,6 +17,7 @@ var CLI = fx.Options(
 		AsCommand(cli.NewStoreLoadCmd),
 		AsCommand(cli.NewStoreSaveCmd),
 		AsCommand(cli.NewStoreDeleteCmd),
+		AsCommand(cli.NewStoreSyncCmd),
 		fx.Annotate(
 			cli.NewCommander,
 			fx.ParamTags(`group:"commands"`),

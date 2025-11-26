@@ -10,6 +10,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/dontagr/pandora/internal/agent/config"
+	"github.com/dontagr/pandora/internal/agent/store/secret"
 	"github.com/dontagr/pandora/internal/agent/store/user"
 )
 
@@ -17,8 +18,12 @@ var SqlLite = fx.Options(
 	fx.Provide(
 		newSqlLite,
 		user.NewUser,
+		secret.NewSecret,
 	),
-	fx.Invoke(func(*user.User) {}),
+	fx.Invoke(
+		func(*user.User) {},
+		func(*secret.Secret) {},
+	),
 )
 
 func newSqlLite(cfg *config.Config, lc fx.Lifecycle) (*sql.DB, error) {

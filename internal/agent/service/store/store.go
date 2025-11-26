@@ -7,15 +7,17 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dontagr/pandora/internal/agent/service/kinds/factory"
+	"github.com/dontagr/pandora/internal/agent/store/secret"
 	"github.com/dontagr/pandora/internal/models"
 )
 
 type Service struct {
 	kindFactory *factory.KindFactory
+	secretStore *secret.Secret
 }
 
-func NewService(kindFactory *factory.KindFactory) *Service {
-	return &Service{kindFactory: kindFactory}
+func NewService(kindFactory *factory.KindFactory, secretStore *secret.Secret) *Service {
+	return &Service{kindFactory: kindFactory, secretStore: secretStore}
 }
 
 func (us *Service) Encrypt(req *models.RequestStoreSave) error {
@@ -44,6 +46,17 @@ func (us *Service) Decrypt(resp *models.ResponceStoreLoad, reveryData any) error
 	}
 
 	return nil
+}
+
+func (us *Service) ResponceSync(body []byte) (*models.ResponceSync, error) {
+	var storeLoad models.ResponceSync
+
+	err := json.Unmarshal(body, &storeLoad)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+	}
+
+	return &storeLoad, nil
 }
 
 func (us *Service) RecoveryStoreLoad(body []byte) (*models.ResponceStoreLoad, error) {
@@ -156,4 +169,43 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 	}
 
 	return &models.RequestStoreSave{Kind: kind, Data: sData, Label: label, Meta: meta}, nil
+}
+
+func (us *Service) GetRequestStoreSync(login string) (*models.RequestSyncList, error) {
+	syncList, err := us.secretStore.GetSecretForSync(login)
+	if err != nil {
+		return nil, fmt.Errorf("GetSecretForSync: %v", err)
+	}
+
+	return syncList, nil
+}
+
+func (us *Service) UpdateLocalChanges(login string, kind string, label string, version int) error {
+	err := us.secretStore.UpdateSecret(login, kind, label, version, 1)
+	if err != nil {
+		return fmt.Errorf("SaveSecret: %v", err)
+	}
+
+	return nil
+}
+
+func (us *Service) SaveLocalChanges(req *models.RequestStoreSave, synced bool, login string) error {
+	data, err := req.GetData()
+	if err != nil {
+		return fmt.Errorf("GetData: %v", err)
+	}
+
+	err = us.secretStore.SaveSecret(login, req.Kind, req.Label, data, req.Meta, req.Version, boolToInt(synced))
+	if err != nil {
+		return fmt.Errorf("SaveSecret: %v", err)
+	}
+
+	return nil
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

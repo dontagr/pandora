@@ -10,6 +10,33 @@ import (
 	"github.com/dontagr/pandora/internal/server/service/customerror"
 )
 
+func (h *Handler) Sync(c echo.Context) error {
+	requestSyncNode, echoError := h.getRequestSyncNode(c)
+	if echoError != nil {
+		if echoError.Err != nil {
+			h.log.Infof(echoError.Error())
+		}
+
+		return echo.NewHTTPError(h.convertCustomErrorToServerCode(echoError.Code), echoError.Message)
+	}
+
+	user := h.jwt.GetUser(c)
+
+	fmt.Println(requestSyncNode)
+	fmt.Println(user)
+
+	err := h.sService.SaveSecret(user.ID, requestSyncNode.Kind, requestSyncNode.Label, requestSyncNode.Data, requestSyncNode.Meta, requestSyncNode.Version)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, "Данные сохранены")
+
+	return c.JSON(http.StatusOK, "ok")
+}
+
 func (h *Handler) Load(c echo.Context) error {
 	requestStoreLoad, echoError := h.getRequestLoad(c)
 	if echoError != nil {
@@ -106,7 +133,7 @@ func (h *Handler) Save(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "проблема с сообщением")
 	}
 
-	err = h.sService.SaveSecret(user.ID, requestStoreSave.Kind, requestStoreSave.Label, data, requestStoreSave.Meta)
+	err = h.sService.SaveSecret(user.ID, requestStoreSave.Kind, requestStoreSave.Label, data, requestStoreSave.Meta, 1)
 	if err != nil {
 		h.log.Infof(err.Error())
 
@@ -141,4 +168,13 @@ func (h *Handler) getRequestLoad(c echo.Context) (*models.RequestStoreLoad, *cus
 	}
 
 	return requestStoreLoad, nil
+}
+
+func (h *Handler) getRequestSyncNode(c echo.Context) (*models.SyncNode, *customerror.CustomError) {
+	syncNode := &models.SyncNode{}
+	if err := c.Bind(syncNode); err != nil {
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+	}
+
+	return syncNode, nil
 }

@@ -123,17 +123,24 @@ Files up to 1 MB are allowed.
 				return
 			}
 
+			synced := false
 			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSave, true)
 			if err != nil {
-				redPrint(cmd, err.Error())
-				return
+				redPrint(cmd, fmt.Sprintf("Failed sync with remote server: %v", err.Error()))
+			} else {
+				if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+					bluePrint(cmd, "Save and Sync secret was successfully")
+					synced = true
+				} else {
+					redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+				}
 			}
 
-			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
-				bluePrint(cmd, "Save and Sync secret was successfully")
+			err = service.SaveLocalChanges(reqStoreSave, synced, client.User.Login)
+			if err != nil {
+				redPrint(cmd, fmt.Sprintf("Failed to save local: %v", string(respoce.Body)))
 			} else {
-				redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
-				return
+				bluePrint(cmd, "Local BD was updated successfully")
 			}
 		},
 	}
@@ -244,4 +251,57 @@ func NewStoreDeleteCmd(client *transport.HTTPManager, service *store.Service) Ge
 	cmd.Flags().StringP("label", "l", "", "Label")
 
 	return GenericCommand{cmd: &cmd, fullName: "root store delete"}
+}
+
+func NewStoreSyncCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
+	cmd := cobra.Command{
+		Use:   "sync",
+		Short: "Action for sync local changes with remote server",
+		Run: func(cmd *cobra.Command, args []string) {
+			if client.User.Token == "" {
+				redPrint(cmd, "Authorization required, please log in")
+				return
+			}
+
+			reqSyncList, err := service.GetRequestStoreSync(client.User.Login)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			for _, node := range reqSyncList.List {
+				req, err := client.PreparationReq(node)
+				if err != nil {
+					redPrint(cmd, err.Error())
+					return
+				}
+
+				respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSync, true)
+				if err != nil {
+					redPrint(cmd, err.Error())
+					return
+				}
+
+				if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+					bluePrint(cmd, fmt.Sprintf("Secret type=%s and lable=%s was successfully sync", node.Kind, node.Label))
+
+					syncResp, err := service.ResponceSync(respoce.Body)
+					if err != nil {
+						redPrint(cmd, err.Error())
+						return
+					}
+
+					err = service.UpdateLocalChanges(client.User.Login, node.Kind, node.Label, syncResp.Version)
+					if err != nil {
+						redPrint(cmd, err.Error())
+						return
+					}
+				} else {
+					redPrint(cmd, fmt.Sprintf("Failed sync secret: %v", string(respoce.Body)))
+				}
+			}
+		},
+	}
+
+	return GenericCommand{cmd: &cmd, fullName: "root store sync"}
 }
