@@ -25,18 +25,18 @@ type (
 		List []StoreLite `json:"list"`
 	}
 	StoreLite struct {
+		DT      time.Time `json:"dt"`
 		Label   string    `json:"label"`
 		Version int       `json:"version"`
-		DT      time.Time `json:"dt"`
 	}
 	ResponceStoreLoad struct {
-		Kind       string            `json:"kind"`
-		Label      string            `json:"label"`
-		Version    int               `json:"version"`
-		Data       string            `json:"data"`
-		Meta       string            `json:"meta"`
 		DT         time.Time         `json:"dt"`
 		ReveryData map[string]string `json:"-"`
+		Kind       string            `json:"kind"`
+		Label      string            `json:"label"`
+		Data       string            `json:"data"`
+		Meta       string            `json:"meta"`
+		Version    int               `json:"version"`
 	}
 	RequestStoreLoad struct {
 		Kind  string `json:"kind"`
@@ -56,8 +56,8 @@ type (
 		Password string `json:"password" validate:"required"`
 	}
 	CommonResponce struct {
-		Body   []byte
 		Meta   CommonMeta
+		Body   []byte
 		Status int
 	}
 	CommonMeta struct {

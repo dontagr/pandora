@@ -239,8 +239,8 @@ func TestConfig_getConfigFile(t *testing.T) {
 	}
 	tests := []struct {
 		name   string
-		fields fields
 		want   []string
+		fields fields
 	}{
 		{
 			name: "existing config file",

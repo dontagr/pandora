@@ -13,9 +13,9 @@ import (
 const oneMBInBytes = 1024 * 1024
 
 type Kind struct {
+	Hasher   *crypro.CManager
 	NeedData bool
 	NeedFile bool
-	Hasher   *crypro.CManager
 }
 
 func (m *Kind) EncryptData(data string) (string, error) {

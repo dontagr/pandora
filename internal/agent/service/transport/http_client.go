@@ -20,8 +20,8 @@ type HTTPManager struct {
 	client       *http.Client
 	log          *zap.SugaredLogger
 	User         *store.User
-	waitForRetry int
 	serverHost   string
+	waitForRetry int
 }
 
 func NewHTTPManager(log *zap.SugaredLogger, cnf *config.Config) (*HTTPManager, error) {

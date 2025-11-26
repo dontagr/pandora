@@ -29,7 +29,8 @@ func newSqlLite(cfg *config.Config, lc fx.Lifecycle) (*sql.DB, error) {
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			ctx, _ = context.WithTimeout(context.Background(), 1*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
 			if err = db.PingContext(ctx); err != nil {
 				return err
 			}

@@ -4,9 +4,9 @@ import "fmt"
 
 type (
 	CustomError struct {
-		Code    int
-		Message string
 		Err     error
+		Message string
+		Code    int
 	}
 )
 

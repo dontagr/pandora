@@ -128,7 +128,7 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 		return nil, err
 	}
 	if kindService.IsDataRequired() {
-		err := kindService.ValidateData(data)
+		err = kindService.ValidateData(data)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +142,7 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 		return nil, err
 	}
 	if kindService.IsFileRequired() {
-		err := kindService.ValidateFile(file)
+		err = kindService.ValidateFile(file)
 		if err != nil {
 			return nil, err
 		}
