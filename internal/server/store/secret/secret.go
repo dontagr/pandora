@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	searchSecretSQL      = `SELECT label, dt, ver FROM public.secret WHERE user_id=$1 AND kind=$2`
+	searchListSecretSQL  = `SELECT label, dt, ver FROM public.secret WHERE user_id=$1 AND kind=$2 ORDER BY id ASC`
 	deleteSecretSQL      = `DELETE FROM public.secret WHERE user_id=$1 AND kind=$2 AND label=$3`
 	searchLabelSecretSQL = `SELECT sec_data, meta_data, dt, ver FROM public.secret WHERE user_id=$1 AND kind=$2 AND label=$3`
 	insertSecretSQL      = `INSERT INTO public.secret (user_id, kind, label, sec_data, meta_data, dt, ver) VALUES ($1, $2, $3, $4, $5, NOW(), 1) ON CONFLICT (user_id, kind, label) DO UPDATE SET sec_data = excluded.sec_data, meta_data = excluded.meta_data, dt = excluded.dt, ver = secret.ver +1;`
@@ -67,6 +67,28 @@ func (s *Secret) DeleteSecret(userId int, kind string, label string) error {
 	}
 
 	return nil
+}
+
+func (s *Secret) GetListSecret(userId int, kind string) (*models.SecretList, error) {
+	rows, err := s.dbpool.Query(context.Background(), searchListSecretSQL, userId, kind)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при извлечении заказов: %w", err)
+	}
+	defer rows.Close()
+
+	result := &models.SecretList{List: make([]models.SecretLite, 0)}
+	for rows.Next() {
+		secret := new(models.SecretLite)
+		err := rows.Scan(&secret.Label, &secret.DT, &secret.Version)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании заказа: %w", err)
+		}
+
+		result.List = append(result.List, *secret)
+	}
+
+	return result, nil
+
 }
 
 func (s *Secret) GetSecret(userId int, kind string, label string) (*models.Secret, error) {

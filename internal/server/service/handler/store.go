@@ -34,6 +34,28 @@ func (h *Handler) Load(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.sService.GetResponceStoreLoad(secret))
 }
 
+func (h *Handler) List(c echo.Context) error {
+	requestStoreList, echoError := h.getRequestList(c)
+	if echoError != nil {
+		if echoError.Err != nil {
+			h.log.Infof(echoError.Error())
+		}
+
+		return echo.NewHTTPError(h.convertCustomErrorToServerCode(echoError.Code), echoError.Message)
+	}
+
+	user := h.jwt.GetUser(c)
+
+	secret, err := h.sService.GetListSecret(user.ID, requestStoreList.Kind)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, h.sService.GetResponceStoreList(secret))
+}
+
 func (h *Handler) Delete(c echo.Context) error {
 	requestStoreLoad, echoError := h.getRequestLoad(c)
 	if echoError != nil {
@@ -102,6 +124,16 @@ func (h *Handler) getRequestSave(c echo.Context) (*models.RequestStoreSave, *cus
 
 	return requestStoreSave, nil
 }
+
+func (h *Handler) getRequestList(c echo.Context) (*models.RequestStoreList, *customerror.CustomError) {
+	requestStoreList := &models.RequestStoreList{}
+	if err := c.Bind(requestStoreList); err != nil {
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+	}
+
+	return requestStoreList, nil
+}
+
 func (h *Handler) getRequestLoad(c echo.Context) (*models.RequestStoreLoad, *customerror.CustomError) {
 	requestStoreLoad := &models.RequestStoreLoad{}
 	if err := c.Bind(requestStoreLoad); err != nil {

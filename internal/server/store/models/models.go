@@ -10,6 +10,14 @@ type (
 		Login        string `json:"login"`
 		PasswordHash string `json:"password"`
 	}
+	SecretList struct {
+		List []SecretLite `json:"list"`
+	}
+	SecretLite struct {
+		Label   string    `json:"label"`
+		DT      time.Time `json:"dt"`
+		Version int       `json:"version"`
+	}
 	Secret struct {
 		Kind    string    `json:"kind"`
 		Label   string    `json:"label"`

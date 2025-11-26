@@ -16,6 +16,22 @@ func NewSecretService(store interfaces.SecretStore, jwtService *jwt.JWTService) 
 	return &Service{store: store, jwtService: jwtService}
 }
 
+func (u *Service) GetResponceStoreList(secret *models.SecretList) *output.ResponceStoreList {
+	resList := &output.ResponceStoreList{
+		List: make([]output.StoreLite, len(secret.List)),
+	}
+
+	for i, secretLite := range secret.List {
+		resList.List[i] = output.StoreLite{
+			Label:   secretLite.Label,
+			DT:      secretLite.DT,
+			Version: secretLite.Version,
+		}
+	}
+
+	return resList
+}
+
 func (u *Service) GetResponceStoreLoad(secret *models.Secret) *output.ResponceStoreLoad {
 	return &output.ResponceStoreLoad{
 		Kind:    secret.Kind,
@@ -25,6 +41,10 @@ func (u *Service) GetResponceStoreLoad(secret *models.Secret) *output.ResponceSt
 		Meta:    secret.Meta,
 		DT:      secret.DT,
 	}
+}
+
+func (u *Service) GetListSecret(userId int, kind string) (*models.SecretList, error) {
+	return u.store.GetListSecret(userId, kind)
 }
 
 func (u *Service) GetSecret(userId int, kind string, label string) (*models.Secret, error) {

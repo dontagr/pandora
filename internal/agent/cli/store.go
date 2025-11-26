@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/dontagr/pandora/internal/agent/service/store"
@@ -22,7 +23,7 @@ func NewStoreCmd() GenericCommand {
 	return GenericCommand{cmd: &cmd, fullName: "root store"}
 }
 
-func NewStoreListCmd(client *transport.HTTPManager) GenericCommand {
+func NewStoreListCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "list",
 		Short: "Action for list stored entities",
@@ -32,17 +33,46 @@ func NewStoreListCmd(client *transport.HTTPManager) GenericCommand {
 				return
 			}
 
-			respoce, err := client.NewRequest(http.MethodGet, nil, models.UrlTest, true)
+			reqStoreList, err := service.GetRequestStoreList(cmd)
 			if err != nil {
 				redPrint(cmd, err.Error())
+				return
 			}
 
-			if respoce.Status == http.StatusUnauthorized {
-				redPrint(cmd, "Authorization required, please log in")
+			req, err := client.PreparationReq(reqStoreList)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreList, true)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+				storeList, err := service.RecoveryStoreList(respoce.Body)
+				if err != nil {
+					redPrint(cmd, err.Error())
+					return
+				}
+
+				bluePrint(cmd, "Get listing was successfully, pls look at him:")
+				color.Set(color.FgHiBlue)
+				for i, secretLite := range storeList.List {
+					cmd.Printf("\n%d: {label: \"%s\", dt: \"%s\", ver: \"%d\"}", i, secretLite.Label, secretLite.DT, secretLite.Version)
+				}
+				color.Unset()
+			} else {
+				redPrint(cmd, fmt.Sprintf("Failed load listing of secret by type=%s: %v", reqStoreList.Kind, string(respoce.Body)))
 				return
 			}
 		},
 	}
+
+	cmd.Flags().StringP("type", "t", "", "Type of saving data, one of [auth|text|binary|card]")
+
 	return GenericCommand{cmd: &cmd, fullName: "root store list"}
 }
 

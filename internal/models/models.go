@@ -9,8 +9,8 @@ import (
 const (
 	UrlUserSignUP  = "api/user/register"
 	UrlUserLogin   = "api/user/login"
-	UrlTest        = "api/store/test"
 	UrlStoreSave   = "api/store/save"
+	UrlStoreList   = "api/store/list"
 	UrlStoreLoad   = "api/store/load"
 	UrlStoreDelete = "api/store/delete"
 
@@ -21,6 +21,14 @@ const (
 )
 
 type (
+	ResponceStoreList struct {
+		List []StoreLite `json:"list"`
+	}
+	StoreLite struct {
+		Label   string    `json:"label"`
+		Version int       `json:"version"`
+		DT      time.Time `json:"dt"`
+	}
 	ResponceStoreLoad struct {
 		Kind       string            `json:"kind"`
 		Label      string            `json:"label"`
@@ -33,6 +41,9 @@ type (
 	RequestStoreLoad struct {
 		Kind  string `json:"kind"`
 		Label string `json:"label"`
+	}
+	RequestStoreList struct {
+		Kind string `json:"kind"`
 	}
 	RequestStoreSave struct {
 		Kind  string `json:"kind"`

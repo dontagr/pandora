@@ -72,6 +72,17 @@ func (us *Service) RecoveryStoreLoad(body []byte) (*models.ResponceStoreLoad, er
 	return &storeLoad, nil
 }
 
+func (us *Service) RecoveryStoreList(body []byte) (*models.ResponceStoreList, error) {
+	var storeList models.ResponceStoreList
+
+	err := json.Unmarshal(body, &storeList)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+	}
+
+	return &storeList, nil
+}
+
 func (us *Service) GetRequestStoreLoad(cmd *cobra.Command) (*models.RequestStoreLoad, error) {
 	kind, _ := cmd.Flags().GetString("type")
 	label, _ := cmd.Flags().GetString("label")
@@ -88,6 +99,19 @@ func (us *Service) GetRequestStoreLoad(cmd *cobra.Command) (*models.RequestStore
 	}
 
 	return &models.RequestStoreLoad{Kind: kind, Label: label}, nil
+}
+
+func (us *Service) GetRequestStoreList(cmd *cobra.Command) (*models.RequestStoreList, error) {
+	kind, _ := cmd.Flags().GetString("type")
+	if kind == "" {
+		return nil, fmt.Errorf("type is required")
+	}
+	_, err := us.kindFactory.GetKind(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.RequestStoreList{Kind: kind}, nil
 }
 
 func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStoreSave, error) {
