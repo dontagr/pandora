@@ -7,11 +7,12 @@ import (
 )
 
 const (
-	UrlUserSignUP = "api/user/register"
-	UrlUserLogin  = "api/user/login"
-	UrlTest       = "api/store/test"
-	UrlStoreSave  = "api/store/save"
-	UrlStoreLoad  = "api/store/load"
+	UrlUserSignUP  = "api/user/register"
+	UrlUserLogin   = "api/user/login"
+	UrlTest        = "api/store/test"
+	UrlStoreSave   = "api/store/save"
+	UrlStoreLoad   = "api/store/load"
+	UrlStoreDelete = "api/store/delete"
 
 	KindAuth   = "auth"
 	KindText   = "text"

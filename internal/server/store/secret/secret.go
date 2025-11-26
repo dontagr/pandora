@@ -15,6 +15,7 @@ import (
 
 const (
 	searchSecretSQL      = `SELECT label, dt, ver FROM public.secret WHERE user_id=$1 AND kind=$2`
+	deleteSecretSQL      = `DELETE FROM public.secret WHERE user_id=$1 AND kind=$2 AND label=$3`
 	searchLabelSecretSQL = `SELECT sec_data, meta_data, dt, ver FROM public.secret WHERE user_id=$1 AND kind=$2 AND label=$3`
 	insertSecretSQL      = `INSERT INTO public.secret (user_id, kind, label, sec_data, meta_data, dt, ver) VALUES ($1, $2, $3, $4, $5, NOW(), 1) ON CONFLICT (user_id, kind, label) DO UPDATE SET sec_data = excluded.sec_data, meta_data = excluded.meta_data, dt = excluded.dt, ver = secret.ver +1;`
 	createSecretTable    = `
@@ -59,6 +60,15 @@ func (s *Secret) addShema(ctx context.Context) error {
 	return err
 }
 
+func (s *Secret) DeleteSecret(userId int, kind string, label string) error {
+	_, err := s.dbpool.Exec(context.Background(), deleteSecretSQL, userId, kind, label)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении секрета: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Secret) GetSecret(userId int, kind string, label string) (*models.Secret, error) {
 	secret := models.Secret{
 		Kind:  kind,
@@ -71,7 +81,7 @@ func (s *Secret) GetSecret(userId int, kind string, label string) (*models.Secre
 		&secret.Version,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return &secret, nil
+		return nil, nil
 	}
 	if err != nil {
 		return nil, err

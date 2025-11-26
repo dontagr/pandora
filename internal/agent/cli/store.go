@@ -155,6 +155,9 @@ func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) Gene
 				bluePrint(cmd, "Load from server secret was successfully")
 				bluePrint(cmd, fmt.Sprintf("You secret: %v", storeLoad.ReveryData))
 				bluePrint(cmd, fmt.Sprintf("You meta: %v", storeLoad.Meta))
+			} else if respoce.Status == http.StatusNotFound {
+				redPrint(cmd, fmt.Sprintf("Secret with type=%s and label=%s not found", reqStoreLoad.Kind, reqStoreLoad.Label))
+				return
 			} else {
 				redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
 				return
@@ -168,13 +171,47 @@ func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) Gene
 	return GenericCommand{cmd: &cmd, fullName: "root store load"}
 }
 
-func NewStoreDeleteCmd() GenericCommand {
+func NewStoreDeleteCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "delete",
 		Short: "Action for delete stored entity",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Println("Try to delete stored entity")
+			if client.User.Token == "" {
+				redPrint(cmd, "Authorization required, please log in")
+				return
+			}
+
+			reqStoreLoad, err := service.GetRequestStoreLoad(cmd)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			req, err := client.PreparationReq(reqStoreLoad)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreDelete, true)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+				bluePrint(cmd, "Secret was successfully delete")
+			} else if respoce.Status == http.StatusNotFound {
+				redPrint(cmd, fmt.Sprintf("Secret with type=%s and label=%s not found", reqStoreLoad.Kind, reqStoreLoad.Label))
+				return
+			} else {
+				redPrint(cmd, fmt.Sprintf("Failed delet secret: %v", string(respoce.Body)))
+			}
 		},
 	}
+
+	cmd.Flags().StringP("type", "t", "", "Type of saving data, one of [auth|text|binary|card]")
+	cmd.Flags().StringP("label", "l", "", "Label")
+
 	return GenericCommand{cmd: &cmd, fullName: "root store delete"}
 }

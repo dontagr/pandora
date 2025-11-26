@@ -27,8 +27,42 @@ func (h *Handler) Load(c echo.Context) error {
 
 		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
 	}
+	if secret == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Cекрет не найден")
+	}
 
 	return c.JSON(http.StatusOK, h.sService.GetResponceStoreLoad(secret))
+}
+
+func (h *Handler) Delete(c echo.Context) error {
+	requestStoreLoad, echoError := h.getRequestLoad(c)
+	if echoError != nil {
+		if echoError.Err != nil {
+			h.log.Infof(echoError.Error())
+		}
+
+		return echo.NewHTTPError(h.convertCustomErrorToServerCode(echoError.Code), echoError.Message)
+	}
+
+	user := h.jwt.GetUser(c)
+	secret, err := h.sService.GetSecret(user.ID, requestStoreLoad.Kind, requestStoreLoad.Label)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+	if secret == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Cекрет не найден")
+	}
+
+	err = h.sService.DeleteSecret(user.ID, requestStoreLoad.Kind, requestStoreLoad.Label)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, "ok")
 }
 
 func (h *Handler) Save(c echo.Context) error {
