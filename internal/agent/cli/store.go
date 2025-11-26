@@ -81,7 +81,7 @@ Files up to 1 MB are allowed.
 				return
 			}
 
-			reqStoreSave, err = service.Encrypt(reqStoreSave)
+			err = service.Encrypt(reqStoreSave)
 			if err != nil {
 				redPrint(cmd, err.Error())
 				return
@@ -99,9 +99,12 @@ Files up to 1 MB are allowed.
 				return
 			}
 
-			fmt.Println(respoce)
-
-			cmd.Println("Try to save from store")
+			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+				bluePrint(cmd, "Save and Sync secret was successfully")
+			} else {
+				redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+				return
+			}
 		},
 	}
 
@@ -109,19 +112,59 @@ Files up to 1 MB are allowed.
 	cmd.Flags().StringP("data", "d", "", "JSON format according to type")
 	cmd.Flags().StringP("file", "f", "", "File path")
 	cmd.Flags().StringP("label", "l", "", "Label")
-	cmd.Flags().StringP("meta", "m", "", "Meta")
+	cmd.Flags().StringP("meta", "m", "", "Meta something elso in JSON format")
 
 	return GenericCommand{cmd: &cmd, fullName: "root store save"}
 }
 
-func NewStoreLoadCmd() GenericCommand {
+func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "load",
 		Short: "Action for load stored entity",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Println("Try to load from store")
+			if client.User.Token == "" {
+				redPrint(cmd, "Authorization required, please log in")
+				return
+			}
+
+			reqStoreLoad, err := service.GetRequestStoreLoad(cmd)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			req, err := client.PreparationReq(reqStoreLoad)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreLoad, true)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
+			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+				storeLoad, err := service.RecoveryStoreLoad(respoce.Body)
+				if err != nil {
+					redPrint(cmd, err.Error())
+					return
+				}
+
+				bluePrint(cmd, "Load from server secret was successfully")
+				bluePrint(cmd, fmt.Sprintf("You secret: %v", storeLoad.ReveryData))
+				bluePrint(cmd, fmt.Sprintf("You meta: %v", storeLoad.Meta))
+			} else {
+				redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+				return
+			}
 		},
 	}
+
+	cmd.Flags().StringP("type", "t", "", "Type of saving data, one of [auth|text|binary|card]")
+	cmd.Flags().StringP("label", "l", "", "Label")
+
 	return GenericCommand{cmd: &cmd, fullName: "root store load"}
 }
 

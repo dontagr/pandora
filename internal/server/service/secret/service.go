@@ -1,6 +1,7 @@
 package secret
 
 import (
+	output "github.com/dontagr/pandora/internal/models"
 	"github.com/dontagr/pandora/internal/server/service/interfaces"
 	"github.com/dontagr/pandora/internal/server/service/jwt"
 	"github.com/dontagr/pandora/internal/server/store/models"
@@ -15,10 +16,21 @@ func NewSecretService(store interfaces.SecretStore, jwtService *jwt.JWTService) 
 	return &Service{store: store, jwtService: jwtService}
 }
 
-func (u *Service) GetSecret(userId int, kind string) (*models.Secret, error) {
-	return u.store.GetSecret(userId, kind)
+func (u *Service) GetResponceStoreLoad(secret *models.Secret) *output.ResponceStoreLoad {
+	return &output.ResponceStoreLoad{
+		Kind:    secret.Kind,
+		Label:   secret.Label,
+		Version: secret.Version,
+		Data:    secret.Data,
+		Meta:    secret.Meta,
+		DT:      secret.DT,
+	}
 }
 
-func (u *Service) SaveSecret(userId int, kind string, label string, data string) error {
-	return u.store.SaveSecret(userId, kind, label, data)
+func (u *Service) GetSecret(userId int, kind string, label string) (*models.Secret, error) {
+	return u.store.GetSecret(userId, kind, label)
+}
+
+func (u *Service) SaveSecret(userId int, kind string, label string, data string, meta string) error {
+	return u.store.SaveSecret(userId, kind, label, data, meta)
 }

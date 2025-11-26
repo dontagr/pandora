@@ -10,7 +10,7 @@ type (
 		SaveUser(login string, passwordHash string) error
 	}
 	SecretStore interface {
-		GetSecret(userId int, kind string) (*models.Secret, error)
-		SaveSecret(userId int, kind string, label string, data string) error
+		GetSecret(userId int, kind string, label string) (*models.Secret, error)
+		SaveSecret(userId int, kind string, label string, data string, meta string) error
 	}
 )

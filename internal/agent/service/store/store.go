@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -17,18 +18,76 @@ func NewService(kindFactory *factory.KindFactory) *Service {
 	return &Service{kindFactory: kindFactory}
 }
 
-func (us *Service) Encrypt(req *models.RequestStoreSave) (*models.RequestStoreSave, error) {
+func (us *Service) Encrypt(req *models.RequestStoreSave) error {
 	kindService, err := us.kindFactory.GetKind(req.Kind)
 	if err != nil {
-		return nil, fmt.Errorf("GetKind: ", err)
+		return fmt.Errorf("getKind: %v", err)
 	}
 
 	req.Data, err = kindService.Encrypt(req.Data)
 	if err != nil {
-		return nil, fmt.Errorf("Encrypt: ", err)
+		return fmt.Errorf("encrypt: %v", err)
 	}
 
-	return req, nil
+	return nil
+}
+
+func (us *Service) Decrypt(resp *models.ResponceStoreLoad, reveryData any) error {
+	kindService, err := us.kindFactory.GetKind(resp.Kind)
+	if err != nil {
+		return fmt.Errorf("getKind: %v", err)
+	}
+
+	resp.ReveryData, err = kindService.Decrypt(reveryData)
+	if err != nil {
+		return fmt.Errorf("decrypt: %v", err)
+	}
+
+	return nil
+}
+
+func (us *Service) RecoveryStoreLoad(body []byte) (*models.ResponceStoreLoad, error) {
+	var storeLoad models.ResponceStoreLoad
+
+	err := json.Unmarshal(body, &storeLoad)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+	}
+
+	kindService, err := us.kindFactory.GetKind(storeLoad.Kind)
+	if err != nil {
+		return nil, fmt.Errorf("getKind: %v", err)
+	}
+
+	reveryData, err := kindService.UnmarshalData(storeLoad.Data)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalData: %v", err)
+	}
+
+	err = us.Decrypt(&storeLoad, reveryData)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt: %v", err)
+	}
+
+	return &storeLoad, nil
+}
+
+func (us *Service) GetRequestStoreLoad(cmd *cobra.Command) (*models.RequestStoreLoad, error) {
+	kind, _ := cmd.Flags().GetString("type")
+	label, _ := cmd.Flags().GetString("label")
+	if kind == "" {
+		return nil, fmt.Errorf("type is required")
+	}
+	kindService, err := us.kindFactory.GetKind(kind)
+	if err != nil {
+		return nil, err
+	}
+	err = kindService.ValidateLabel(label)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.RequestStoreLoad{Kind: kind, Label: label}, nil
 }
 
 func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStoreSave, error) {
@@ -36,6 +95,7 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 	data, _ := cmd.Flags().GetString("data")
 	file, _ := cmd.Flags().GetString("file")
 	label, _ := cmd.Flags().GetString("label")
+	meta, _ := cmd.Flags().GetString("meta")
 	if kind == "" {
 		return nil, fmt.Errorf("type is required")
 	}
@@ -53,6 +113,10 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 	if err != nil {
 		return nil, err
 	}
+	err = kindService.ValidateMeta(meta)
+	if err != nil {
+		return nil, err
+	}
 	if kindService.IsFileRequired() {
 		err := kindService.ValidateFile(file)
 		if err != nil {
@@ -67,5 +131,5 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 		return nil, err
 	}
 
-	return &models.RequestStoreSave{Kind: kind, Data: sData, Label: label}, nil
+	return &models.RequestStoreSave{Kind: kind, Data: sData, Label: label, Meta: meta}, nil
 }

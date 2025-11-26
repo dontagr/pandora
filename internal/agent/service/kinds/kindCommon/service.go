@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 
 	crypro "github.com/dontagr/pandora/pkg/crypto"
 )
@@ -23,6 +25,15 @@ func (m *Kind) EncryptData(data string) (string, error) {
 	}
 
 	return encrypt.String(), nil
+}
+
+func (m *Kind) DecryptData(data string) (string, error) {
+	decrypt, err := m.Hasher.Decrypt([]byte(data))
+	if err != nil {
+		return "", fmt.Errorf("DecryptData: %v", err)
+	}
+
+	return string(decrypt), nil
 }
 
 func (m *Kind) IsDataRequired() bool {
@@ -52,6 +63,14 @@ func (m *Kind) ValidateLabel(label string) error {
 
 	if len(label) > 255 {
 		return fmt.Errorf("label len more than 256")
+	}
+
+	return nil
+}
+
+func (m *Kind) ValidateMeta(meta string) error {
+	if meta != "" && !isStringLessThanOneMB(meta) {
+		return fmt.Errorf("meta len more than one MB")
 	}
 
 	return nil
@@ -112,4 +131,22 @@ func bytesToMegabytes(bytes int64) float64 {
 
 func isStringLessThanOneMB(s string) bool {
 	return len(s) < oneMBInBytes
+}
+func (m *Kind) StructToMap(data interface{}) map[string]string {
+	result := make(map[string]string)
+	val := reflect.ValueOf(data)
+	typ := reflect.TypeOf(data)
+
+	if val.Kind() != reflect.Struct {
+		return nil
+	}
+
+	for i := 0; i < val.NumField(); i++ {
+		key := strings.ToLower(typ.Field(i).Name)
+		value := val.Field(i).Interface()
+
+		result[key] = fmt.Sprintf("%v", value)
+	}
+
+	return result
 }

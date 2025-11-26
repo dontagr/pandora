@@ -64,7 +64,7 @@ func (h *HTTPManager) NewRequest(method string, body *bytes.Buffer, url string, 
 				return nil, err
 			}
 			if responce.Status >= 200 && responce.Status < 300 {
-				h.log.Infof("Sent request was successfully with status code: %d", responce.Status)
+				h.log.Debugf("Sent request was successfully with status code: %d", responce.Status)
 			} else {
 				h.log.Warnf("Received non-2xx status code: %d", responce.Status)
 			}

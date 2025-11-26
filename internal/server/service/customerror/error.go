@@ -16,6 +16,7 @@ const (
 	Payment
 	Unauthorized
 	Conflict
+	BadRequest
 )
 
 func (e *CustomError) Error() string {

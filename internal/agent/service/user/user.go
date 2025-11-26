@@ -26,7 +26,7 @@ func (us *Service) GetLoginPassword(cmd *cobra.Command) (*models.RequestUser, er
 		return nil, fmt.Errorf("password is required")
 	}
 	if !isValidPassword(password) {
-		return nil, fmt.Errorf("password is invalid")
+		return nil, fmt.Errorf("password is invalid (The length must be greater than 5 and must contain numbers, at least one uppercase and lowercase letter)")
 	}
 
 	return &models.RequestUser{Login: login, Password: password}, nil

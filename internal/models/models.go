@@ -1,10 +1,17 @@
 package models
 
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
 const (
 	UrlUserSignUP = "api/user/register"
 	UrlUserLogin  = "api/user/login"
 	UrlTest       = "api/store/test"
 	UrlStoreSave  = "api/store/save"
+	UrlStoreLoad  = "api/store/load"
 
 	KindAuth   = "auth"
 	KindText   = "text"
@@ -13,9 +20,23 @@ const (
 )
 
 type (
+	ResponceStoreLoad struct {
+		Kind       string            `json:"kind"`
+		Label      string            `json:"label"`
+		Version    int               `json:"version"`
+		Data       string            `json:"data"`
+		Meta       string            `json:"meta"`
+		DT         time.Time         `json:"dt"`
+		ReveryData map[string]string `json:"-"`
+	}
+	RequestStoreLoad struct {
+		Kind  string `json:"kind"`
+		Label string `json:"label"`
+	}
 	RequestStoreSave struct {
 		Kind  string `json:"kind"`
 		Data  any    `json:"data"`
+		Meta  string `json:"meta"`
 		Label string `json:"label"`
 	}
 	RequestUser struct {
@@ -47,3 +68,12 @@ type (
 		Text string `json:"text"`
 	}
 )
+
+func (r RequestStoreSave) GetData() (string, error) {
+	marshal, err := json.Marshal(r.Data)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling data: %w", err)
+	}
+
+	return string(marshal), nil
+}

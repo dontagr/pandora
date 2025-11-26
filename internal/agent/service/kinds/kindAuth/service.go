@@ -72,3 +72,34 @@ func (m *Kind) Encrypt(data any) (any, error) {
 
 	return req, nil
 }
+
+func (m *Kind) Decrypt(data any) (map[string]string, error) {
+	var err error
+	req := data.(*models.RequestKindAuth)
+
+	if req.Login != "" {
+		req.Login, err = m.DecryptData(req.Login)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if req.Password != "" {
+		req.Password, err = m.DecryptData(req.Password)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return m.StructToMap(*req), nil
+}
+
+func (m *Kind) UnmarshalData(data string) (any, error) {
+	var reqData models.RequestKindAuth
+
+	err := json.Unmarshal([]byte(data), &reqData)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshal data: %v", err)
+	}
+
+	return &reqData, nil
+}

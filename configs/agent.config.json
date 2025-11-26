@@ -1,6 +1,6 @@
 {
   "Logging": {
-    "LogLevel": "INFO"
+    "LogLevel": "DEBUG"
   },
   "Transport": {
     "WaitForRetry": 2

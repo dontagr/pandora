@@ -7,29 +7,72 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/dontagr/pandora/internal/models"
+	"github.com/dontagr/pandora/internal/server/service/customerror"
 )
+
+func (h *Handler) Load(c echo.Context) error {
+	requestStoreLoad, echoError := h.getRequestLoad(c)
+	if echoError != nil {
+		if echoError.Err != nil {
+			h.log.Infof(echoError.Error())
+		}
+
+		return echo.NewHTTPError(h.convertCustomErrorToServerCode(echoError.Code), echoError.Message)
+	}
+
+	user := h.jwt.GetUser(c)
+	secret, err := h.sService.GetSecret(user.ID, requestStoreLoad.Kind, requestStoreLoad.Label)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, h.sService.GetResponceStoreLoad(secret))
+}
 
 func (h *Handler) Save(c echo.Context) error {
 	requestStoreSave, echoError := h.getRequestSave(c)
 	if echoError != nil {
-		return echoError
+		if echoError.Err != nil {
+			h.log.Infof(echoError.Error())
+		}
+
+		return echo.NewHTTPError(h.convertCustomErrorToServerCode(echoError.Code), echoError.Message)
 	}
 
 	user := h.jwt.GetUser(c)
 
-	fmt.Println(user)
-	fmt.Println(requestStoreSave)
+	data, err := requestStoreSave.GetData()
+	if err != nil {
+		h.log.Infof(err.Error())
 
-	return c.JSON(http.StatusOK, "Пользователь успешно проверен")
+		return echo.NewHTTPError(http.StatusBadRequest, "проблема с сообщением")
+	}
+
+	err = h.sService.SaveSecret(user.ID, requestStoreSave.Kind, requestStoreSave.Label, data, requestStoreSave.Meta)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, "Данные сохранены")
 }
 
-func (h *Handler) getRequestSave(c echo.Context) (*models.RequestStoreSave, *echo.HTTPError) {
+func (h *Handler) getRequestSave(c echo.Context) (*models.RequestStoreSave, *customerror.CustomError) {
 	requestStoreSave := &models.RequestStoreSave{}
 	if err := c.Bind(requestStoreSave); err != nil {
-		h.log.Errorf("request failed: %v", err)
-
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "Неверный формат запроса")
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
 	}
 
 	return requestStoreSave, nil
+}
+func (h *Handler) getRequestLoad(c echo.Context) (*models.RequestStoreLoad, *customerror.CustomError) {
+	requestStoreLoad := &models.RequestStoreLoad{}
+	if err := c.Bind(requestStoreLoad); err != nil {
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+	}
+
+	return requestStoreLoad, nil
 }

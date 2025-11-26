@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type (
 	User struct {
@@ -9,11 +11,11 @@ type (
 		PasswordHash string `json:"password"`
 	}
 	Secret struct {
-		UserId  int       `json:"user_id"`
 		Kind    string    `json:"kind"`
 		Label   string    `json:"label"`
 		Version int       `json:"version"`
 		Data    string    `json:"data"`
+		Meta    string    `json:"meta"`
 		DT      time.Time `json:"dt"`
 	}
 )
