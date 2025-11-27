@@ -6,13 +6,13 @@ var (
 )
 
 type Config struct {
-	Crypto     Crypto     `json:"Crypto"`
-	Log        Logging    `json:"Logging"`
-	HTTPServer HTTPServer `json:"HttpServing"`
-	DataBase   DataBase   `json:"DataBase"`
+	Crypto     Crypto   `json:"Crypto"`
+	Log        Logging  `json:"Logging"`
+	DataBase   DataBase `json:"DataBase"`
 	Version    string
 	BildDT     string
-	Transport  Transport `json:"Transport"`
+	HTTPServer HTTPServer `json:"HttpServing"`
+	Transport  Transport  `json:"Transport"`
 }
 
 type Crypto struct {
