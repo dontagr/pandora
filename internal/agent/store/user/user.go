@@ -70,7 +70,7 @@ func (u *User) GetUserAuth() (*models.User, error) {
 	var us models.User
 	err := rows.Scan(&us.Login, &us.Token)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("GetUserAuth Scan: %v", err)
+		return nil, fmt.Errorf("GetUserAuth Scan: %w", err)
 	}
 
 	return &us, nil

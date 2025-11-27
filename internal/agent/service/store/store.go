@@ -23,12 +23,12 @@ func NewService(kindFactory *factory.KindFactory, secretStore *secret.Secret) *S
 func (us *Service) Encrypt(req *models.RequestStoreSave) error {
 	kindService, err := us.kindFactory.GetKind(req.Kind)
 	if err != nil {
-		return fmt.Errorf("getKind: %v", err)
+		return fmt.Errorf("getKind: %w", err)
 	}
 
 	req.Data, err = kindService.Encrypt(req.Data)
 	if err != nil {
-		return fmt.Errorf("encrypt: %v", err)
+		return fmt.Errorf("encrypt: %w", err)
 	}
 
 	return nil
@@ -37,12 +37,12 @@ func (us *Service) Encrypt(req *models.RequestStoreSave) error {
 func (us *Service) Decrypt(resp *models.ResponceStoreLoad, reveryData any) error {
 	kindService, err := us.kindFactory.GetKind(resp.Kind)
 	if err != nil {
-		return fmt.Errorf("getKind: %v", err)
+		return fmt.Errorf("getKind: %w", err)
 	}
 
 	resp.ReveryData, err = kindService.Decrypt(reveryData)
 	if err != nil {
-		return fmt.Errorf("decrypt: %v", err)
+		return fmt.Errorf("decrypt: %w", err)
 	}
 
 	return nil
@@ -53,10 +53,21 @@ func (us *Service) ResponceSync(body []byte) (*models.ResponceSync, error) {
 
 	err := json.Unmarshal(body, &storeLoad)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+		return nil, fmt.Errorf("error deserializing JSON: %w", err)
 	}
 
 	return &storeLoad, nil
+}
+
+func (us *Service) RecoverySyncList(body []byte) (*models.ResponceSyncListSave, error) {
+	var sync models.ResponceSyncListSave
+
+	err := json.Unmarshal(body, &sync)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON: %w", err)
+	}
+
+	return &sync, nil
 }
 
 func (us *Service) RecoveryStoreLoad(body []byte) (*models.ResponceStoreLoad, error) {
@@ -64,25 +75,43 @@ func (us *Service) RecoveryStoreLoad(body []byte) (*models.ResponceStoreLoad, er
 
 	err := json.Unmarshal(body, &storeLoad)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+		return nil, fmt.Errorf("error deserializing JSON: %w", err)
 	}
 
+	return us.enrichResponceStoreLoad(&storeLoad)
+}
+
+func (us *Service) enrichResponceStoreLoad(storeLoad *models.ResponceStoreLoad) (*models.ResponceStoreLoad, error) {
 	kindService, err := us.kindFactory.GetKind(storeLoad.Kind)
 	if err != nil {
-		return nil, fmt.Errorf("getKind: %v", err)
+		return nil, fmt.Errorf("getKind: %w", err)
 	}
 
 	reveryData, err := kindService.UnmarshalData(storeLoad.Data)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalData: %v", err)
+		return nil, fmt.Errorf("unmarshalData: %w", err)
 	}
 
-	err = us.Decrypt(&storeLoad, reveryData)
+	err = us.Decrypt(storeLoad, reveryData)
 	if err != nil {
-		return nil, fmt.Errorf("decrypt: %v", err)
+		return nil, fmt.Errorf("decrypt: %w", err)
 	}
 
-	return &storeLoad, nil
+	return storeLoad, nil
+}
+
+func (us *Service) UnmarshalData(kind string, str string) (any, error) {
+	kindService, err := us.kindFactory.GetKind(kind)
+	if err != nil {
+		return nil, fmt.Errorf("getKind: %w", err)
+	}
+
+	output, err := kindService.UnmarshalData(str)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalData: %w", err)
+	}
+
+	return output, nil
 }
 
 func (us *Service) RecoveryStoreList(body []byte) (*models.ResponceStoreList, error) {
@@ -90,7 +119,7 @@ func (us *Service) RecoveryStoreList(body []byte) (*models.ResponceStoreList, er
 
 	err := json.Unmarshal(body, &storeList)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing JSON: %v", err)
+		return nil, fmt.Errorf("error deserializing JSON: %w", err)
 	}
 
 	return &storeList, nil
@@ -174,7 +203,7 @@ func (us *Service) GetRequestStoreSave(cmd *cobra.Command) (*models.RequestStore
 func (us *Service) GetRequestStoreSync(login string) (*models.RequestSyncList, error) {
 	syncList, err := us.secretStore.GetSecretForSync(login)
 	if err != nil {
-		return nil, fmt.Errorf("GetSecretForSync: %v", err)
+		return nil, fmt.Errorf("GetSecretForSync: %w", err)
 	}
 
 	return syncList, nil
@@ -183,21 +212,53 @@ func (us *Service) GetRequestStoreSync(login string) (*models.RequestSyncList, e
 func (us *Service) UpdateLocalChanges(login string, kind string, label string, version int) error {
 	err := us.secretStore.UpdateSecret(login, kind, label, version, 1)
 	if err != nil {
-		return fmt.Errorf("SaveSecret: %v", err)
+		return fmt.Errorf("saveSecret: %w", err)
 	}
 
 	return nil
 }
 
-func (us *Service) SaveLocalChanges(req *models.RequestStoreSave, synced bool, login string) error {
-	data, err := req.GetData()
+func (us *Service) LoadLocalSecret(login string, kind string, lable string) (*models.RequestStoreSave, error) {
+	loadSecret, err := us.secretStore.LoadSecret(login, kind, lable)
 	if err != nil {
-		return fmt.Errorf("GetData: %v", err)
+		return nil, fmt.Errorf("LoadSecret: %v", err)
+	}
+
+	load, err := us.enrichResponceStoreLoad(&models.ResponceStoreLoad{Kind: kind, Data: loadSecret.Data.(string)})
+	if err != nil {
+		return nil, fmt.Errorf("enrichResponceStoreLoad: %v", err)
+	}
+
+	loadSecret.Data = load.ReveryData
+
+	return loadSecret, nil
+}
+
+func (us *Service) TryGetLocalVersion(login string, reqStoreSave *models.RequestStoreSave) error {
+	version, err := us.secretStore.GetSecretVersion(login, reqStoreSave.Kind, reqStoreSave.Label)
+	if err != nil {
+		return fmt.Errorf("getSecretVersion: %w", err)
+	}
+
+	reqStoreSave.Version = version + 1
+
+	return nil
+}
+
+func (us *Service) SaveLocalChanges(login string, req *models.RequestStoreSave, synced bool) error {
+	var err error
+	data, ok := req.Data.(string)
+
+	if !ok {
+		data, err = req.GetData()
+		if err != nil {
+			return fmt.Errorf("GetData: %w", err)
+		}
 	}
 
 	err = us.secretStore.SaveSecret(login, req.Kind, req.Label, data, req.Meta, req.Version, boolToInt(synced))
 	if err != nil {
-		return fmt.Errorf("SaveSecret: %v", err)
+		return fmt.Errorf("SaveSecret: %w", err)
 	}
 
 	return nil

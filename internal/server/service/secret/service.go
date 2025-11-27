@@ -32,6 +32,23 @@ func (u *Service) GetResponceStoreList(secret *models.SecretList) *output.Respon
 	return resList
 }
 
+func (u *Service) GetResponceStoreSync(secret *models.SecretSync) *output.ResponceSyncList {
+	result := output.ResponceSyncList{List: make([]*output.ResponceStoreLoad, len(secret.List))}
+
+	for i, row := range secret.List {
+		result.List[i] = &output.ResponceStoreLoad{
+			Kind:    row.Kind,
+			Label:   row.Label,
+			Version: row.Version,
+			Data:    row.Data,
+			Meta:    row.Meta,
+			DT:      row.DT,
+		}
+	}
+
+	return &result
+}
+
 func (u *Service) GetResponceStoreLoad(secret *models.Secret) *output.ResponceStoreLoad {
 	return &output.ResponceStoreLoad{
 		Kind:    secret.Kind,
@@ -43,6 +60,10 @@ func (u *Service) GetResponceStoreLoad(secret *models.Secret) *output.ResponceSt
 	}
 }
 
+func (u *Service) SyncSecret(userId int) (*models.SecretSync, error) {
+	return u.store.SyncSecret(userId)
+}
+
 func (u *Service) GetListSecret(userId int, kind string) (*models.SecretList, error) {
 	return u.store.GetListSecret(userId, kind)
 }
@@ -51,7 +72,7 @@ func (u *Service) GetSecret(userId int, kind string, label string) (*models.Secr
 	return u.store.GetSecret(userId, kind, label)
 }
 
-func (u *Service) SaveSecret(userId int, kind string, label string, data string, meta string, version int) error {
+func (u *Service) SaveSecret(userId int, kind string, label string, data string, meta string, version int) (*models.Secret, error) {
 	return u.store.SaveSecret(userId, kind, label, data, meta, version)
 }
 

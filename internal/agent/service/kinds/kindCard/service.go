@@ -48,7 +48,7 @@ func (m *Kind) GetStruct(data string, _ string) (any, error) {
 
 	err := json.Unmarshal([]byte(data), &req)
 	if err != nil {
-		return nil, fmt.Errorf("error with deserializing JSON: %v", err)
+		return nil, fmt.Errorf("error with deserializing JSON: %w", err)
 	}
 
 	if req.Number == "" && req.Date == "" && req.Cvv == "" {
@@ -176,7 +176,7 @@ func (m *Kind) UnmarshalData(data string) (any, error) {
 
 	err := json.Unmarshal([]byte(data), &reqData)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshal data: %v", err)
+		return nil, fmt.Errorf("error unmarshal data: %w", err)
 	}
 
 	return &reqData, nil

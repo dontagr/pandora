@@ -10,6 +10,9 @@ type (
 		PasswordHash string `json:"password"`
 		ID           int    `json:"id"`
 	}
+	SecretSync struct {
+		List []Secret `json:"list"`
+	}
 	SecretList struct {
 		List []SecretLite `json:"list"`
 	}

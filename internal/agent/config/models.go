@@ -30,6 +30,7 @@ type Transport struct {
 
 type HTTPServer struct {
 	Host string `json:"Host" validate:"required"`
+	Gzip bool   `json:"Gzip"`
 }
 
 type DataBase struct {

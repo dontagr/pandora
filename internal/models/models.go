@@ -33,6 +33,12 @@ type (
 	ResponceSync struct {
 		Version int `json:"version"`
 	}
+	ResponceSyncList struct {
+		List []*ResponceStoreLoad `json:"list"`
+	}
+	ResponceSyncListSave struct {
+		List []*RequestStoreSave `json:"list"`
+	}
 	ResponceStoreLoad struct {
 		DT         time.Time         `json:"dt"`
 		ReveryData map[string]string `json:"-"`
@@ -43,7 +49,7 @@ type (
 		Version    int               `json:"version"`
 	}
 	RequestSyncList struct {
-		List []SyncNode `json:"list"`
+		List []*RequestStoreSave `json:"list"`
 	}
 	SyncNode struct {
 		Kind    string `json:"kind"`

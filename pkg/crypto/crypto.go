@@ -32,7 +32,7 @@ func (cm *CManager) InitPublicKey(pathCryptoKey string) error {
 	if pathCryptoKey != "" {
 		key, err := getPublicKey(pathCryptoKey)
 		if err != nil {
-			return fmt.Errorf("failed to read PEM file: %v", err)
+			return fmt.Errorf("failed to read PEM file: %w", err)
 		}
 		cm.PublicKey = key
 	}
@@ -44,7 +44,7 @@ func (cm *CManager) InitPrivateKey(pathCryptoKey string) error {
 	if pathCryptoKey != "" {
 		key, err := getPrivateKey(pathCryptoKey)
 		if err != nil {
-			return fmt.Errorf("failed to read PEM file: %v", err)
+			return fmt.Errorf("failed to read PEM file: %w", err)
 		}
 		cm.PrivateKey = key
 	}
@@ -79,7 +79,7 @@ func getPublicKey(pathCryptoKey string) (*rsa.PublicKey, error) {
 func getPemBlock(pathCryptoKey string) (*pem.Block, error) {
 	keyPEM, err := os.ReadFile(pathCryptoKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed cryptoKey ReadFile: %v", err)
+		return nil, fmt.Errorf("failed cryptoKey ReadFile: %w", err)
 	}
 	keyBlock, _ := pem.Decode(keyPEM)
 	if keyBlock == nil {
@@ -92,12 +92,12 @@ func getPemBlock(pathCryptoKey string) (*pem.Block, error) {
 func (cm *CManager) Decrypt(bodyBytes []byte) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(string(bodyBytes))
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode base64: %v", err)
+		return nil, fmt.Errorf("cannot decode base64: %w", err)
 	}
 
 	encryptedBytes, err := decryptOAEP(sha256.New(), rand.Reader, cm.PrivateKey, data, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decryptOAEP: %v", err)
+		return nil, fmt.Errorf("cannot decryptOAEP: %w", err)
 	}
 
 	return encryptedBytes, nil
@@ -110,7 +110,7 @@ func (cm *CManager) Encrypt(body *bytes.Buffer) (*bytes.Buffer, error) {
 
 	encryptedBytes, err := encryptOAEP(sha256.New(), rand.Reader, cm.PublicKey, body.Bytes(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("rsa.EncryptOAEP: %v", err)
+		return nil, fmt.Errorf("rsa.EncryptOAEP: %w", err)
 	}
 
 	return bytes.NewBuffer([]byte(base64.StdEncoding.EncodeToString(encryptedBytes))), nil

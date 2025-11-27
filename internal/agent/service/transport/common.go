@@ -10,16 +10,19 @@ import (
 func (h *HTTPManager) PreparationReq(row any) (*bytes.Buffer, error) {
 	body, err := h.marshal(row)
 	if err != nil {
-		return nil, fmt.Errorf("get marshal body: %v", err)
+		return nil, fmt.Errorf("get marshal body: %w", err)
 	}
 
-	compressedBody, err := h.compress(body)
-	if err != nil {
+	if h.cnf.HTTPServer.Gzip {
+		compressedBody, err := h.compress(body)
+		if err != nil {
+			return nil, fmt.Errorf("compress: %w", err)
+		}
 
-		return nil, fmt.Errorf("compress: %v", err)
+		return compressedBody, nil
 	}
 
-	return compressedBody, nil
+	return body, nil
 }
 
 func (h *HTTPManager) marshal(body any) (*bytes.Buffer, error) {
@@ -44,6 +47,10 @@ func (h *HTTPManager) compress(body *bytes.Buffer) (*bytes.Buffer, error) {
 	_, err := gzipWriter.Write(body.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("error compressing data: %w", err)
+	}
+	err = gzipWriter.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("error compressing flush: %w", err)
 	}
 	if err := gzipWriter.Close(); err != nil {
 		return nil, fmt.Errorf("error closing Gzip writer: %w", err)

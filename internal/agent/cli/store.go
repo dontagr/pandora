@@ -111,37 +111,19 @@ Files up to 1 MB are allowed.
 				return
 			}
 
+			err = service.TryGetLocalVersion(client.User.Login, reqStoreSave)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return
+			}
+
 			err = service.Encrypt(reqStoreSave)
 			if err != nil {
 				redPrint(cmd, err.Error())
 				return
 			}
 
-			req, err := client.PreparationReq(reqStoreSave)
-			if err != nil {
-				redPrint(cmd, err.Error())
-				return
-			}
-
-			synced := false
-			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSave, true)
-			if err != nil {
-				redPrint(cmd, fmt.Sprintf("Failed sync with remote server: %v", err.Error()))
-			} else {
-				if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
-					bluePrint(cmd, "Save and Sync secret was successfully")
-					synced = true
-				} else {
-					redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
-				}
-			}
-
-			err = service.SaveLocalChanges(reqStoreSave, synced, client.User.Login)
-			if err != nil {
-				redPrint(cmd, fmt.Sprintf("Failed to save local: %v", string(respoce.Body)))
-			} else {
-				bluePrint(cmd, "Local BD was updated successfully")
-			}
+			saveSecret(cmd, client, service, reqStoreSave)
 		},
 	}
 
@@ -176,28 +158,44 @@ func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) Gene
 				return
 			}
 
+			load := false
 			respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreLoad, true)
 			if err != nil {
 				redPrint(cmd, err.Error())
-				return
+			} else {
+				if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+					storeLoad, err := service.RecoveryStoreLoad(respoce.Body)
+					if err != nil {
+						redPrint(cmd, err.Error())
+						return
+					}
+					load = true
+
+					color.Set(color.FgHiBlue)
+					cmd.Println("Load from server secret was successfully, secret contains:")
+					cmd.Printf("You secret: %v\n", storeLoad.ReveryData)
+					cmd.Printf("You meta: %v\n", storeLoad.Meta)
+					color.Unset()
+				} else if respoce.Status == http.StatusNotFound {
+					redPrint(cmd, fmt.Sprintf("Secret with type=%s and label=%s not found", reqStoreLoad.Kind, reqStoreLoad.Label))
+					return
+				} else {
+					redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+					return
+				}
 			}
 
-			if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
-				storeLoad, err := service.RecoveryStoreLoad(respoce.Body)
+			if !load {
+				loadSecret, err := service.LoadLocalSecret(client.User.Login, reqStoreLoad.Kind, reqStoreLoad.Label)
 				if err != nil {
-					redPrint(cmd, err.Error())
 					return
 				}
 
-				bluePrint(cmd, "Load from server secret was successfully")
-				bluePrint(cmd, fmt.Sprintf("You secret: %v", storeLoad.ReveryData))
-				bluePrint(cmd, fmt.Sprintf("You meta: %v", storeLoad.Meta))
-			} else if respoce.Status == http.StatusNotFound {
-				redPrint(cmd, fmt.Sprintf("Secret with type=%s and label=%s not found", reqStoreLoad.Kind, reqStoreLoad.Label))
-				return
-			} else {
-				redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
-				return
+				color.Set(color.FgHiBlue)
+				cmd.Println("Local secret contains:")
+				cmd.Printf("You secret: %v\n", loadSecret.Data)
+				cmd.Printf("You meta: %v\n", loadSecret.Meta)
+				color.Unset()
 			}
 		},
 	}
@@ -269,39 +267,155 @@ func NewStoreSyncCmd(client *transport.HTTPManager, service *store.Service) Gene
 				return
 			}
 
-			for _, node := range reqSyncList.List {
-				req, err := client.PreparationReq(node)
+			if len(reqSyncList.List) > 0 {
+				bluePrint(cmd, fmt.Sprintf("%d secrets need to be sent to the server:", len(reqSyncList.List)))
+			}
+
+			mapSaving := map[string]bool{}
+			for i, reqStoreSave := range reqSyncList.List {
+				mapSaving[fmt.Sprintf("%s||%s", reqStoreSave.Kind, reqStoreSave.Label)] = true
+				color.Set(color.FgHiBlue)
+				cmd.Printf("[sercet %d] Try sync type=%s and label=%s\n", i+1, reqStoreSave.Kind, reqStoreSave.Label)
+				color.Unset()
+
+				reqStoreSave.Data, err = service.UnmarshalData(reqStoreSave.Kind, reqStoreSave.Data.(string))
 				if err != nil {
 					redPrint(cmd, err.Error())
 					return
 				}
 
-				respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSync, true)
-				if err != nil {
-					redPrint(cmd, err.Error())
+				sync := saveSecret(cmd, client, service, reqStoreSave)
+				if !sync {
+					redPrint(cmd, "[sercet %d] Sync interrupted, please try again later.")
+
 					return
 				}
+				color.Set(color.FgHiBlue)
+				cmd.Printf("[sercet %d] Sync successfully\n", i+1)
+				color.Unset()
+			}
 
+			respoce, err := client.NewRequest(http.MethodGet, nil, models.UrlStoreSync, true)
+			if err != nil {
+				redPrint(cmd, fmt.Sprintf("Failed sync with remote server: %v", err.Error()))
+			} else {
 				if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
-					bluePrint(cmd, fmt.Sprintf("Secret type=%s and lable=%s was successfully sync", node.Kind, node.Label))
-
-					syncResp, err := service.ResponceSync(respoce.Body)
+					syncList, err := service.RecoverySyncList(respoce.Body)
 					if err != nil {
 						redPrint(cmd, err.Error())
 						return
 					}
 
-					err = service.UpdateLocalChanges(client.User.Login, node.Kind, node.Label, syncResp.Version)
-					if err != nil {
-						redPrint(cmd, err.Error())
-						return
+					for _, row := range syncList.List {
+						if _, ok := mapSaving[fmt.Sprintf("%s||%s", row.Kind, row.Label)]; ok {
+							continue
+						}
+						reqStoreSave := models.RequestStoreSave{
+							Kind:    row.Kind,
+							Label:   row.Label,
+							Data:    row.Data,
+							Meta:    row.Meta,
+							Version: row.Version,
+						}
+
+						err = service.SaveLocalChanges(client.User.Login, &reqStoreSave, true)
+						if err != nil {
+							redPrint(cmd, fmt.Sprintf("Failed to save local type=%s and lable=%s: %v", reqStoreSave.Kind, reqStoreSave.Label, reqStoreSave.Data))
+						}
 					}
+
+					bluePrint(cmd, "Sync successfully")
 				} else {
-					redPrint(cmd, fmt.Sprintf("Failed sync secret: %v", string(respoce.Body)))
+					redPrint(cmd, fmt.Sprintf("Failed sync with remote server with code: %v", respoce.Status))
 				}
 			}
 		},
 	}
 
 	return GenericCommand{cmd: &cmd, fullName: "root store sync"}
+}
+
+func saveSecret(cmd *cobra.Command, client *transport.HTTPManager, service *store.Service, reqStoreSave *models.RequestStoreSave) bool {
+	req, err := client.PreparationReq(reqStoreSave)
+	if err != nil {
+		redPrint(cmd, err.Error())
+		return false
+	}
+
+	synced := false
+	respoce, err := client.NewRequest(http.MethodPost, req, models.UrlStoreSave, true)
+	if err != nil {
+		redPrint(cmd, fmt.Sprintf("Failed sync with remote server: %v", err.Error()))
+	} else {
+		if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+			bluePrint(cmd, "Save and Sync secret was successfully")
+			synced = true
+		} else if respoce.Status == http.StatusConflict {
+			storeLoad, err := service.RecoveryStoreLoad(respoce.Body)
+			if err != nil {
+				redPrint(cmd, err.Error())
+				return false
+			}
+
+			magentaPrint(cmd, "Saving secret conflicts with the remote server data.")
+			cmd.Printf("Server data: {\n\tdata: \"%s\"\n\tmeta: \"%s\"\n\tdate: \"%s\"\n\tversion: \"%d\"\n}\n", storeLoad.ReveryData, storeLoad.Meta, storeLoad.DT, storeLoad.Version)
+
+			cyanPrint(cmd, "Please reply, would you like to overwrite the data on the server?")
+
+			answer := ""
+			for {
+				color.Set(color.FgHiCyan)
+				cmd.Println("Reply: yes or no")
+				color.Unset()
+
+				_, err = fmt.Scanln(&answer)
+				if err != nil {
+					return false
+				}
+
+				if answer == "no" {
+					bluePrint(cmd, "Secret was left unchanged")
+					reqStoreSave.Data = storeLoad.Data
+					reqStoreSave.Meta = storeLoad.Meta
+					reqStoreSave.Version = storeLoad.Version
+					break
+				}
+				if answer == "yes" {
+					bluePrint(cmd, "Secret changed")
+					reqStoreSave.Version = storeLoad.Version + 1
+
+					req, err = client.PreparationReq(reqStoreSave)
+					if err != nil {
+						redPrint(cmd, err.Error())
+						return false
+					}
+
+					respoce, err = client.NewRequest(http.MethodPost, req, models.UrlStoreSave, true)
+					if err != nil {
+						redPrint(cmd, fmt.Sprintf("Failed sync with remote server: %v", err.Error()))
+					} else {
+						if respoce.Status >= http.StatusOK && respoce.Status < http.StatusMultipleChoices {
+							bluePrint(cmd, "Save and Sync secret was successfully")
+						} else {
+							redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+						}
+					}
+					break
+				}
+			}
+
+			synced = true
+		} else {
+			redPrint(cmd, fmt.Sprintf("Sync secret failed: %v", string(respoce.Body)))
+		}
+	}
+
+	err = service.SaveLocalChanges(client.User.Login, reqStoreSave, synced)
+	if err != nil {
+		redPrint(cmd, fmt.Sprintf("Failed to save local: %v", reqStoreSave.Data))
+	} else {
+		bluePrint(cmd, "Local BD was updated successfully")
+	}
+
+	return true
 }

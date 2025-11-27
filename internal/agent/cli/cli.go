@@ -36,7 +36,7 @@ It's quite easy to start using it, just sign up and store you data`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()
 			if err != nil {
-				zlog.Errorf("handler help failed: %v", err)
+				zlog.Errorf("handler help failed: %w", err)
 			}
 
 			if client.User.Login != "" {
@@ -93,6 +93,20 @@ func redPrint(cmd *cobra.Command, msg string) {
 
 func bluePrint(cmd *cobra.Command, msg string) {
 	color.Set(color.FgHiBlue)
+	cmd.Println("")
+	cmd.Println(msg)
+	color.Unset()
+}
+
+func magentaPrint(cmd *cobra.Command, msg string) {
+	color.Set(color.FgHiMagenta)
+	cmd.Println("")
+	cmd.Println(msg)
+	color.Unset()
+}
+
+func cyanPrint(cmd *cobra.Command, msg string) {
+	color.Set(color.FgHiCyan)
 	cmd.Println("")
 	cmd.Println(msg)
 	color.Unset()

@@ -3,6 +3,7 @@ package secret
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"go.uber.org/fx"
@@ -25,6 +26,8 @@ const (
 	insertSecretSQL        = `INSERT INTO secret ("login", "kind", "label", "data", "meta", "version", "sync") VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT("login", "kind", "label") DO UPDATE SET "data"=excluded.data, "meta"=excluded.meta, "sync"=excluded.sync, "version"=excluded.version;`
 	updateSecretSQL        = `UPDATE secret SET "version" = ?, "sync" = ? WHERE "login" = ? AND "kind" = ? AND "label" = ?;`
 	selectSecretForSyncSQL = `SELECT "kind", "label", "data", "meta", "version" FROM secret WHERE "login"=? AND "sync"=0;`
+	selectVersionSecretSQL = `SELECT "version" FROM secret WHERE "login"=? AND "kind" = ? AND "label" = ?;`
+	selectSecretSQL        = `SELECT "data", "meta", "version" FROM secret WHERE "login"=? AND "kind" = ? AND "label" = ?;`
 )
 
 type Secret struct {
@@ -60,6 +63,38 @@ func (u *Secret) addShema() error {
 	return nil
 }
 
+func (u *Secret) LoadSecret(login string, kind string, label string) (*models.RequestStoreSave, error) {
+	rows := u.db.QueryRow(selectSecretSQL, login, kind, label)
+
+	store := models.RequestStoreSave{Kind: kind, Label: label}
+	err := rows.Scan(&store.Data, &store.Meta, &store.Version)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("selectVersion Scan: %w", err)
+	}
+
+	return &store, nil
+}
+
+func (u *Secret) GetSecretVersion(login string, kind string, label string) (int, error) {
+	rows := u.db.QueryRow(selectVersionSecretSQL, login, kind, label)
+
+	var version int
+	err := rows.Scan(&version)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+
+		return 0, fmt.Errorf("selectVersion Scan: %w", err)
+	}
+
+	return version, nil
+}
+
 func (u *Secret) UpdateSecret(login string, kind string, label string, version int, sync int) error {
 	_, err := u.db.Exec(updateSecretSQL, version, sync, login, kind, label)
 
@@ -75,20 +110,22 @@ func (u *Secret) SaveSecret(login string, kind string, label string, data string
 func (u *Secret) GetSecretForSync(login string) (*models.RequestSyncList, error) {
 	rows, err := u.db.Query(selectSecretForSyncSQL, login)
 	if err != nil {
-		return nil, fmt.Errorf("query: %v", err)
+		return nil, fmt.Errorf("query: %w", err)
 	}
 	defer rows.Close()
 
-	result := &models.RequestSyncList{List: make([]models.SyncNode, 0)}
+	result := &models.RequestSyncList{List: make([]*models.RequestStoreSave, 0)}
 	for rows.Next() {
-		node := models.SyncNode{}
+		node := models.RequestStoreSave{}
 
 		err = rows.Scan(&node.Kind, &node.Label, &node.Data, &node.Meta, &node.Version)
 		if err != nil {
-			return nil, fmt.Errorf("scan: %v", err)
+			return nil, fmt.Errorf("scan: %w", err)
 		}
 
-		result.List = append(result.List, node)
+		node.Version = node.Version + 1
+
+		result.List = append(result.List, &node)
 	}
 
 	return result, nil

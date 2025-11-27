@@ -21,7 +21,7 @@ var Postgres = fx.Options(
 func newPostgresConnect(cfg *config.Config, lc fx.Lifecycle) (*pgxpool.Pool, error) {
 	dbpool, err := pgxpool.New(context.Background(), cfg.DataBase.DatabaseDsn)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database: %v", err)
+		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
 
 	lc.Append(fx.Hook{

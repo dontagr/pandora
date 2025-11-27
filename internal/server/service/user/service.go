@@ -36,22 +36,22 @@ func (u *Service) GetUser(login string) (*models.User, error) {
 func (u *Service) SignUp(login string, password string) (string, error) {
 	passHash, err := u.generatePassHash(password)
 	if err != nil {
-		return "", fmt.Errorf("generatePassHash: %v", err)
+		return "", fmt.Errorf("generatePassHash: %w", err)
 	}
 
 	err = u.store.SaveUser(login, passHash)
 	if err != nil {
-		return "", fmt.Errorf("saveUser: %v", err)
+		return "", fmt.Errorf("saveUser: %w", err)
 	}
 
 	user, err := u.store.GetUser(login)
 	if err != nil {
-		return "", fmt.Errorf("getUser: %v", err)
+		return "", fmt.Errorf("getUser: %w", err)
 	}
 
 	jwtHash, err := u.jwtService.GetJWT(user.ID, user.Login)
 	if err != nil {
-		return "", fmt.Errorf("failed create jwt: %v", err)
+		return "", fmt.Errorf("failed create jwt: %w", err)
 	}
 
 	return jwtHash, nil
@@ -65,7 +65,7 @@ func (u *Service) SignIn(password string, user *models.User) (string, *customerr
 
 	jwtHash, err := u.jwtService.GetJWT(user.ID, user.Login)
 	if err != nil {
-		return "", customerror.NewCustomError(customerror.Internal, "Внутренняя ошибка сервера", fmt.Errorf("failed create jwt: %v", err))
+		return "", customerror.NewCustomError(customerror.Internal, "Внутренняя ошибка сервера", fmt.Errorf("failed create jwt: %w", err))
 	}
 
 	return jwtHash, nil
@@ -74,7 +74,7 @@ func (u *Service) SignIn(password string, user *models.User) (string, *customerr
 func (u *Service) generatePassHash(password string) (string, error) {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate password hash: %v", err)
+		return "", fmt.Errorf("failed to generate password hash: %w", err)
 	}
 
 	return string(passHash), nil

@@ -21,7 +21,7 @@ type Kind struct {
 func (m *Kind) EncryptData(data string) (string, error) {
 	encrypt, err := m.Hasher.Encrypt(bytes.NewBufferString(data))
 	if err != nil {
-		return "", fmt.Errorf("EncryptData: %v", err)
+		return "", fmt.Errorf("EncryptData: %w", err)
 	}
 
 	return encrypt.String(), nil
@@ -30,7 +30,7 @@ func (m *Kind) EncryptData(data string) (string, error) {
 func (m *Kind) DecryptData(data string) (string, error) {
 	decrypt, err := m.Hasher.Decrypt([]byte(data))
 	if err != nil {
-		return "", fmt.Errorf("DecryptData: %v", err)
+		return "", fmt.Errorf("DecryptData: %w", err)
 	}
 
 	return string(decrypt), nil
