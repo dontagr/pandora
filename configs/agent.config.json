@@ -6,7 +6,8 @@
     "WaitForRetry": 2
   },
   "HttpServing": {
-    "Host": "http://localhost:7080/"
+    "Host": "http://localhost:8085/",
+    "Gzip": true
   },
   "DataBase": {
     "Path": "pandora.db"

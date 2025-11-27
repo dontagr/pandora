@@ -20,6 +20,7 @@ type HTTPManager struct {
 	client       *http.Client
 	log          *zap.SugaredLogger
 	User         *store.User
+	cnf          *config.Config
 	serverHost   string
 	waitForRetry int
 }
@@ -27,9 +28,10 @@ type HTTPManager struct {
 func NewHTTPManager(log *zap.SugaredLogger, cnf *config.Config) (*HTTPManager, error) {
 	manager := HTTPManager{
 		log:          log,
-		client:       &http.Client{},
+		client:       &http.Client{Timeout: 3 * time.Second},
 		waitForRetry: cnf.Transport.WaitForRetry,
 		serverHost:   cnf.HTTPServer.Host,
+		cnf:          cnf,
 	}
 
 	return &manager, nil
@@ -44,10 +46,12 @@ func (h *HTTPManager) NewRequest(method string, body *bytes.Buffer, url string, 
 		req, err = http.NewRequest(method, fmt.Sprintf("%s%s", h.serverHost, url), body)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %v", err)
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Set("Content-Encoding", "gzip")
+	if h.cnf.HTTPServer.Gzip {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
 	req.Header.Set("Content-Type", "application/json")
 	if auth {
 		req.Header.Add("Authorization", h.User.Token)
@@ -69,10 +73,6 @@ func (h *HTTPManager) NewRequest(method string, body *bytes.Buffer, url string, 
 				h.log.Warnf("Received non-2xx status code: %d", responce.Status)
 			}
 
-			err = resp.Body.Close()
-			if err != nil {
-				return nil, err
-			}
 			return responce, nil
 		}
 		if errors.As(errSend, &netErr) {
@@ -81,19 +81,18 @@ func (h *HTTPManager) NewRequest(method string, body *bytes.Buffer, url string, 
 				time.Sleep(time.Duration(h.waitForRetry) * time.Second)
 			}
 		} else {
-			return nil, fmt.Errorf("sending data: %v", errSend)
+			return nil, fmt.Errorf("sending data: %w", errSend)
 		}
 	}
 
-	return nil, fmt.Errorf("failed to send request after retrying: %v", errSend)
+	return nil, fmt.Errorf("failed to send request after retrying: %w", errSend)
 }
 
 func getResponce(resp *http.Response) (*models.CommonResponce, error) {
-	defer resp.Body.Close()
-
 	bodyBytes, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("reading response body: %v", err)
+		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
 	out := models.CommonResponce{

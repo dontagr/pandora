@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	createUserTable = `CREATE TABLE IF NOT EXISTS user ("id" INTEGER, "login" TEXT, "token" TEXT, CONSTRAINT "uq_id" UNIQUE ("id"));`
+	createUserTable = `CREATE TABLE IF NOT EXISTS user ("id" INTEGER NOT NULL, "login" TEXT NOT NULL, "token" TEXT NOT NULL, CONSTRAINT "uq_id" UNIQUE ("id"));`
 	insertUserSQL   = `INSERT INTO user ("id", "login", "token") VALUES (1, ?, ?) ON CONFLICT("id") DO UPDATE SET login=excluded.login, token=excluded.token;`
 	selectUserSQL   = `SELECT "login", "token" FROM user WHERE "id"=1 LIMIT 1;`
 )
@@ -59,13 +59,8 @@ func (u *User) addShema() error {
 }
 
 func (u *User) SaveUserAuth(login string, token string) error {
-	statement, err := u.db.Prepare(insertUserSQL)
-	if err != nil {
-		return err
-	}
-	defer statement.Close()
+	_, err := u.db.Exec(insertUserSQL, login, token)
 
-	_, err = statement.Exec(login, token)
 	return err
 }
 
@@ -75,7 +70,7 @@ func (u *User) GetUserAuth() (*models.User, error) {
 	var us models.User
 	err := rows.Scan(&us.Login, &us.Token)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("GetUserAuth Scan: %v", err)
+		return nil, fmt.Errorf("GetUserAuth Scan: %w", err)
 	}
 
 	return &us, nil

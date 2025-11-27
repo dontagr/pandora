@@ -35,11 +35,11 @@ func NewCManager(cfg *config.Config) (*crypro.CManager, error) {
 	cmanager := crypro.CManager{}
 	err := cmanager.InitPublicKey(cfg.Crypto.PublicKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewHasher: %v", err)
+		return nil, fmt.Errorf("NewHasher: %w", err)
 	}
 	err = cmanager.InitPrivateKey(cfg.Crypto.PrivateKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewHasher: %v", err)
+		return nil, fmt.Errorf("NewHasher: %w", err)
 	}
 
 	return &cmanager, nil

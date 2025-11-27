@@ -42,7 +42,7 @@ func (m *Kind) ValidateData(data string) error {
 func (m *Kind) GetStruct(_ string, file string) (any, error) {
 	fileData, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	return &models.RequestKindBinary{Text: string(fileData)}, nil
@@ -81,7 +81,7 @@ func (m *Kind) UnmarshalData(data string) (any, error) {
 
 	err := json.Unmarshal([]byte(data), &reqData)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshal data: %v", err)
+		return nil, fmt.Errorf("error unmarshal data: %w", err)
 	}
 
 	return &reqData, nil

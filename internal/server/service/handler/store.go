@@ -10,6 +10,18 @@ import (
 	"github.com/dontagr/pandora/internal/server/service/customerror"
 )
 
+func (h *Handler) Sync(c echo.Context) error {
+	user := h.jwt.GetUser(c)
+	secretlist, err := h.sService.SyncSecret(user.ID)
+	if err != nil {
+		h.log.Infof(err.Error())
+
+		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+
+	return c.JSON(http.StatusOK, h.sService.GetResponceStoreSync(secretlist))
+}
+
 func (h *Handler) Load(c echo.Context) error {
 	requestStoreLoad, echoError := h.getRequestLoad(c)
 	if echoError != nil {
@@ -106,11 +118,14 @@ func (h *Handler) Save(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "проблема с сообщением")
 	}
 
-	err = h.sService.SaveSecret(user.ID, requestStoreSave.Kind, requestStoreSave.Label, data, requestStoreSave.Meta)
+	secret, err := h.sService.SaveSecret(user.ID, requestStoreSave.Kind, requestStoreSave.Label, data, requestStoreSave.Meta, requestStoreSave.Version)
 	if err != nil {
 		h.log.Infof(err.Error())
 
 		return echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+	}
+	if secret != nil {
+		return c.JSON(http.StatusConflict, h.sService.GetResponceStoreLoad(secret))
 	}
 
 	return c.JSON(http.StatusOK, "Данные сохранены")
@@ -119,7 +134,7 @@ func (h *Handler) Save(c echo.Context) error {
 func (h *Handler) getRequestSave(c echo.Context) (*models.RequestStoreSave, *customerror.CustomError) {
 	requestStoreSave := &models.RequestStoreSave{}
 	if err := c.Bind(requestStoreSave); err != nil {
-		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %w", err))
 	}
 
 	return requestStoreSave, nil
@@ -128,7 +143,7 @@ func (h *Handler) getRequestSave(c echo.Context) (*models.RequestStoreSave, *cus
 func (h *Handler) getRequestList(c echo.Context) (*models.RequestStoreList, *customerror.CustomError) {
 	requestStoreList := &models.RequestStoreList{}
 	if err := c.Bind(requestStoreList); err != nil {
-		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %w", err))
 	}
 
 	return requestStoreList, nil
@@ -137,8 +152,17 @@ func (h *Handler) getRequestList(c echo.Context) (*models.RequestStoreList, *cus
 func (h *Handler) getRequestLoad(c echo.Context) (*models.RequestStoreLoad, *customerror.CustomError) {
 	requestStoreLoad := &models.RequestStoreLoad{}
 	if err := c.Bind(requestStoreLoad); err != nil {
-		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %v", err))
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %w", err))
 	}
 
 	return requestStoreLoad, nil
+}
+
+func (h *Handler) getRequestSyncNode(c echo.Context) (*models.SyncNode, *customerror.CustomError) {
+	syncNode := &models.SyncNode{}
+	if err := c.Bind(syncNode); err != nil {
+		return nil, customerror.NewCustomError(customerror.BadRequest, "Неверный формат запроса", fmt.Errorf("request failed: %w", err))
+	}
+
+	return syncNode, nil
 }

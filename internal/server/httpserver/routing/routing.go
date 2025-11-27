@@ -20,7 +20,7 @@ func InitRouting(
 
 	server.Master.Validator, err = validator.NewCustomValidator()
 	if err != nil {
-		return fmt.Errorf("failed create validator %v", err)
+		return fmt.Errorf("failed create validator %w", err)
 	}
 
 	g := server.Master.Group("/api/user")
@@ -32,6 +32,7 @@ func InitRouting(
 	s.POST("/load", handler.Load, jwt.GetMiddleware(jwtConfig))
 	s.POST("/delete", handler.Delete, jwt.GetMiddleware(jwtConfig))
 	s.POST("/list", handler.List, jwt.GetMiddleware(jwtConfig))
+	s.GET("/sync", handler.Sync, jwt.GetMiddleware(jwtConfig))
 
 	return nil
 }

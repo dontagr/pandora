@@ -79,7 +79,7 @@ func (m *Kind) UnmarshalData(data string) (any, error) {
 
 	err := json.Unmarshal([]byte(data), &reqData)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshal data: %v", err)
+		return nil, fmt.Errorf("error unmarshal data: %w", err)
 	}
 
 	return &reqData, nil
