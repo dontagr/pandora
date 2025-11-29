@@ -1,3 +1,4 @@
+// Package cli содержит реализацию командной строки для приложения Pandora.
 package cli
 
 import (
@@ -14,10 +15,13 @@ import (
 	"github.com/dontagr/pandora/internal/agent/service/transport"
 )
 
+// Commander представляет собой команду для управления приложением Pandora.
 type Commander struct {
+	// zlog представляет собой логгер для приложения.
 	zlog *zap.SugaredLogger
 }
 
+// NewCommander создает новую команду для управления приложением Pandora.
 func NewCommander(
 	commands []CobraCommand,
 	zlog *zap.SugaredLogger,
@@ -84,6 +88,7 @@ It's quite easy to start using it, just sign up and store you data`,
 	return cmd
 }
 
+// redPrint выводит сообщение в красном цвете.
 func redPrint(cmd *cobra.Command, msg string) {
 	color.Set(color.FgHiRed)
 	cmd.Println("")
@@ -91,6 +96,7 @@ func redPrint(cmd *cobra.Command, msg string) {
 	color.Unset()
 }
 
+// bluePrint выводит сообщение в синем цвете.
 func bluePrint(cmd *cobra.Command, msg string) {
 	color.Set(color.FgHiBlue)
 	cmd.Println("")
@@ -98,6 +104,7 @@ func bluePrint(cmd *cobra.Command, msg string) {
 	color.Unset()
 }
 
+// magentaPrint выводит сообщение в фиолетовом цвете.
 func magentaPrint(cmd *cobra.Command, msg string) {
 	color.Set(color.FgHiMagenta)
 	cmd.Println("")
@@ -105,6 +112,7 @@ func magentaPrint(cmd *cobra.Command, msg string) {
 	color.Unset()
 }
 
+// cyanPrint выводит сообщение в голубом цвете.
 func cyanPrint(cmd *cobra.Command, msg string) {
 	color.Set(color.FgHiCyan)
 	cmd.Println("")

@@ -58,6 +58,7 @@ type (
 		Meta    string `json:"meta"`
 		Version int    `json:"version"`
 	}
+	// RequestStoreLoad представляет собой структуру запроса для загрузки хранилища.
 	RequestStoreLoad struct {
 		Kind  string `json:"kind"`
 		Label string `json:"label"`
@@ -65,6 +66,7 @@ type (
 	RequestStoreList struct {
 		Kind string `json:"kind"`
 	}
+	// RequestStoreSave представляет собой структуру запроса для сохранения хранилища.
 	RequestStoreSave struct {
 		Kind    string `json:"kind"`
 		Data    any    `json:"data"`

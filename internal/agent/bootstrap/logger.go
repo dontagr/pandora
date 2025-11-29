@@ -11,6 +11,8 @@ import (
 	"github.com/dontagr/pandora/internal/agent/config"
 )
 
+// Logger предоставляет функциональность для настройки и инициализации логирования
+// в приложении с использованием библиотеки fx и zap.
 var Logger = fx.Options(
 	fx.Provide(newLogger),
 	fx.WithLogger(func(log *zap.SugaredLogger) fxevent.Logger {
@@ -21,6 +23,9 @@ var Logger = fx.Options(
 	}),
 )
 
+// newLogger создает и настраивает zap SugaredLogger с использованием конфигурации,
+// полученной из структуры Config. Он также добавляет хук завершения, чтобы синхронизировать
+// логи перед остановкой приложения.
 func newLogger(lc fx.Lifecycle, cnf *config.Config) (*zap.SugaredLogger, error) {
 	cfg := zap.NewProductionConfig()
 

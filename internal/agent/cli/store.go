@@ -12,6 +12,8 @@ import (
 	"github.com/dontagr/pandora/internal/models"
 )
 
+// NewStoreCmd создает команду верхнего уровня для работы с хранилищем (store),
+// которая содержит подкоманды для различных действий.
 func NewStoreCmd() GenericCommand {
 	cmd := cobra.Command{
 		Use:   "store [command]",
@@ -23,6 +25,7 @@ func NewStoreCmd() GenericCommand {
 	return GenericCommand{cmd: &cmd, fullName: "root store"}
 }
 
+// NewStoreListCmd создает подкоманду для отображения списка сохраненных сущностей в хранилище.
 func NewStoreListCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "list",
@@ -76,6 +79,7 @@ func NewStoreListCmd(client *transport.HTTPManager, service *store.Service) Gene
 	return GenericCommand{cmd: &cmd, fullName: "root store list"}
 }
 
+// NewStoreSaveCmd создает подкоманду для сохранения новой сущности в хранилище.
 func NewStoreSaveCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "save",

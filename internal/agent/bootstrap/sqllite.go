@@ -14,6 +14,8 @@ import (
 	"github.com/dontagr/pandora/internal/agent/store/user"
 )
 
+// SqlLite объединяет предоставление зависимостей для SQL-базы данных,
+// пользовательского и секретного хранилищ, а также их инициализацию с использованием fx.
 var SqlLite = fx.Options(
 	fx.Provide(
 		newSqlLite,
@@ -26,12 +28,16 @@ var SqlLite = fx.Options(
 	),
 )
 
+// newSqlLite создает и настраивает подключение к базе данных SQLite.
+// Она также добавляет хуки для открытия и закрытия соединения при старте и остановке приложения.
 func newSqlLite(cfg *config.Config, lc fx.Lifecycle) (*sql.DB, error) {
+	// Открывает новое подключение к базе данных по указанному пути
 	db, err := sql.Open("sqlite", cfg.DataBase.Path)
 	if err != nil {
 		return nil, err
 	}
 
+	// Добавляет хуки старта и остановки для управления жизненным циклом подключения к базе данных
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)

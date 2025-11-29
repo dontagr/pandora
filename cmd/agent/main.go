@@ -1,3 +1,5 @@
+// Package main представляет собой основной пакет исполняемого агентского приложения Pandora.
+// Этот пакет инициализирует приложение через Uber FX, управляет запуском и зависимостями с помощью DI.
 package main
 
 import (
@@ -10,6 +12,7 @@ import (
 	"github.com/dontagr/pandora/internal/agent/bootstrap"
 )
 
+// main — это точка входа приложения, где инициализируется и запускается агентское приложение.
 func main() {
 	app := fx.New(CreateApp())
 
@@ -20,13 +23,15 @@ func main() {
 	}
 }
 
+// CreateApp возвращает fx.Option, которая конфигурирует приложение агента,
+// инкапсулируя настройки конфигурации, зависимости и компоненты.
 func CreateApp() fx.Option {
 	return fx.Options(
-		bootstrap.Config,
-		bootstrap.Logger,
-		bootstrap.SqlLite,
-		bootstrap.Transport,
-		bootstrap.Service,
-		bootstrap.CLI,
+		bootstrap.Config,    // Инициализация конфигурации приложения.
+		bootstrap.Logger,    // Установка системы логирования.
+		bootstrap.SqlLite,   // Настройка доступа к базе данных SQLite.
+		bootstrap.Transport, // Настройка транспортного уровня.
+		bootstrap.Service,   // Настройка службы приложения.
+		bootstrap.CLI,       // Конфигурация интерфейса командной строки (CLI).
 	)
 }

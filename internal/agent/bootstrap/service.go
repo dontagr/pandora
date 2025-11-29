@@ -16,6 +16,8 @@ import (
 	crypro "github.com/dontagr/pandora/pkg/crypto"
 )
 
+// Service организует предоставление и регистрацию всех необходимых сервисов
+// и их зависимостей в приложении, используя библиотеку fx.
 var Service = fx.Options(
 	fx.Provide(
 		user.NewService,
@@ -31,12 +33,16 @@ var Service = fx.Options(
 	),
 )
 
+// NewCManager создает и возвращает новый экземпляр CManager для управления криптографическими ключами.
+// Он инициализирует публичный и приватный ключи, используя данные из конфига.
 func NewCManager(cfg *config.Config) (*crypro.CManager, error) {
 	cmanager := crypro.CManager{}
+	// Инициализация публичного ключа
 	err := cmanager.InitPublicKey(cfg.Crypto.PublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("NewHasher: %w", err)
 	}
+	// Инициализация приватного ключа
 	err = cmanager.InitPrivateKey(cfg.Crypto.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("NewHasher: %w", err)
