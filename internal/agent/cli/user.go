@@ -11,6 +11,8 @@ import (
 	"github.com/dontagr/pandora/internal/models"
 )
 
+// NewUserCmd создает команду для выполнения действий пользователя.
+// Она служит точкой входа для подкоманд, связанных с пользователями.
 func NewUserCmd() GenericCommand {
 	cmd := cobra.Command{
 		Use:   "user",
@@ -26,6 +28,8 @@ func NewUserCmd() GenericCommand {
 	return GenericCommand{cmd: &cmd, fullName: "root user"}
 }
 
+// NewUserSignUPCmd создает команду для регистрации нового пользователя.
+// Команда включает в себя проверку пароля на соответствие необходимым требованиям.
 func NewUserSignUPCmd(client *transport.HTTPManager, userStore *user.User, service *userServ.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "sign-up [-l login][-p password]",
@@ -79,6 +83,8 @@ The password must meet the following conditions:
 	return GenericCommand{cmd: &cmd, fullName: "root user sign-up"}
 }
 
+// NewUserLoginCmd создает команду для входа пользователя в систему.
+// Команда проверяет учетные данные и сохраняет токен авторизации в случае успешного входа.
 func NewUserLoginCmd(client *transport.HTTPManager, userStore *user.User, service *userServ.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "login [-l login][-p password]",

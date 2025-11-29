@@ -140,6 +140,7 @@ Files up to 1 MB are allowed.
 	return GenericCommand{cmd: &cmd, fullName: "root store save"}
 }
 
+// NewStoreLoadCmd создает подкоманду для загрузки сохраненной сущности из хранилища.
 func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "load",
@@ -210,6 +211,7 @@ func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) Gene
 	return GenericCommand{cmd: &cmd, fullName: "root store load"}
 }
 
+// NewStoreDeleteCmd создает новую команду для удаления сохраненной сущности.
 func NewStoreDeleteCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "delete",
@@ -255,6 +257,7 @@ func NewStoreDeleteCmd(client *transport.HTTPManager, service *store.Service) Ge
 	return GenericCommand{cmd: &cmd, fullName: "root store delete"}
 }
 
+// NewStoreSyncCmd создает подкоманду для синхронизации локальных изменений с удаленным сервером.
 func NewStoreSyncCmd(client *transport.HTTPManager, service *store.Service) GenericCommand {
 	cmd := cobra.Command{
 		Use:   "sync",
@@ -339,6 +342,8 @@ func NewStoreSyncCmd(client *transport.HTTPManager, service *store.Service) Gene
 	return GenericCommand{cmd: &cmd, fullName: "root store sync"}
 }
 
+// SaveSecret сохраняет секрет на удаленном сервере и обрабатывает любые конфликты, которые могут возникнуть.
+// Если конфликт обнаружен, он предупреждает пользователя о замене данных на сервере и дает возможность его перезаписи.
 func saveSecret(cmd *cobra.Command, client *transport.HTTPManager, service *store.Service, reqStoreSave *models.RequestStoreSave) bool {
 	req, err := client.PreparationReq(reqStoreSave)
 	if err != nil {
