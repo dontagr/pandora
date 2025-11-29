@@ -1,3 +1,5 @@
+// Package secret предоставляет функциональность для управления секретами пользователей,
+// включая сохранение, загрузку и синхронизацию секретов в базе данных.
 package secret
 
 import (
@@ -12,7 +14,9 @@ import (
 	"github.com/dontagr/pandora/internal/models"
 )
 
+// SQL-запросы для создания и управления таблицей секретов в базе данных.
 const (
+	// createSecretTable создает таблицу секретов, если она еще не существует.
 	createSecretTable = `CREATE TABLE IF NOT EXISTS secret (
     	"login" TEXT NOT NULL, 
 		"kind" TEXT NOT NULL,
@@ -23,18 +27,26 @@ const (
 		"sync" INTEGER NOT NULL,
 		CONSTRAINT "uq_login_kind_label" UNIQUE ("login", "kind", "label")
     );`
-	insertSecretSQL        = `INSERT INTO secret ("login", "kind", "label", "data", "meta", "version", "sync") VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT("login", "kind", "label") DO UPDATE SET "data"=excluded.data, "meta"=excluded.meta, "sync"=excluded.sync, "version"=excluded.version;`
-	updateSecretSQL        = `UPDATE secret SET "version" = ?, "sync" = ? WHERE "login" = ? AND "kind" = ? AND "label" = ?;`
+	// insertSecretSQL вставляет или обновляет запись секретов в таблице.
+	insertSecretSQL = `INSERT INTO secret ("login", "kind", "label", "data", "meta", "version", "sync") VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT("login", "kind", "label") DO UPDATE SET "data"=excluded.data, "meta"=excluded.meta, "sync"=excluded.sync, "version"=excluded.version;`
+	// updateSecretSQL обновляет версию и статус синхронизации имеющегося секрета в таблице.
+	updateSecretSQL = `UPDATE secret SET "version" = ?, "sync" = ? WHERE "login" = ? AND "kind" = ? AND "label" = ?;`
+	// selectSecretForSyncSQL выбирает все секреты, которые нуждаются в синхронизации.
 	selectSecretForSyncSQL = `SELECT "kind", "label", "data", "meta", "version" FROM secret WHERE "login"=? AND "sync"=0;`
+	// selectVersionSecretSQL выбирает версию секрета из таблицы.
 	selectVersionSecretSQL = `SELECT "version" FROM secret WHERE "login"=? AND "kind" = ? AND "label" = ?;`
-	selectSecretSQL        = `SELECT "data", "meta", "version" FROM secret WHERE "login"=? AND "kind" = ? AND "label" = ?;`
+	// selectSecretSQL выбирает все данные определенного секрета.
+	selectSecretSQL = `SELECT "data", "meta", "version" FROM secret WHERE "login"=? AND "kind" = ? AND "label" = ?;`
 )
 
+// Secret предоставляет методы для управления секретами в базе данных.
 type Secret struct {
 	db  *sql.DB
 	log *zap.SugaredLogger
 }
 
+// NewSecret создает новый экземпляр Secret и инициализирует таблицу секретов в базе данных.
+// Он также регистрирует хук для инициализации схемы базы данных при запуске приложения.
 func NewSecret(log *zap.SugaredLogger, db *sql.DB, lc fx.Lifecycle) *Secret {
 	secret := Secret{
 		db:  db,
@@ -55,6 +67,7 @@ func NewSecret(log *zap.SugaredLogger, db *sql.DB, lc fx.Lifecycle) *Secret {
 	return &secret
 }
 
+// addShema создает таблицу секретов в базе данных, если она еще не существует.
 func (u *Secret) addShema() error {
 	if _, err := u.db.Exec(createSecretTable); err != nil {
 		return err
@@ -63,6 +76,7 @@ func (u *Secret) addShema() error {
 	return nil
 }
 
+// LoadSecret загружает секрет из базы данных по предоставленным логину, типу и метке.
 func (u *Secret) LoadSecret(login string, kind string, label string) (*models.RequestStoreSave, error) {
 	rows := u.db.QueryRow(selectSecretSQL, login, kind, label)
 
@@ -79,6 +93,7 @@ func (u *Secret) LoadSecret(login string, kind string, label string) (*models.Re
 	return &store, nil
 }
 
+// GetSecretVersion получает текущую версию секрета из базы данных.
 func (u *Secret) GetSecretVersion(login string, kind string, label string) (int, error) {
 	rows := u.db.QueryRow(selectVersionSecretSQL, login, kind, label)
 
@@ -95,18 +110,21 @@ func (u *Secret) GetSecretVersion(login string, kind string, label string) (int,
 	return version, nil
 }
 
+// UpdateSecret обновляет версию и статус синхронизации секрета в базе данных.
 func (u *Secret) UpdateSecret(login string, kind string, label string, version int, sync int) error {
 	_, err := u.db.Exec(updateSecretSQL, version, sync, login, kind, label)
 
 	return err
 }
 
+// SaveSecret сохраняет новый секрет или обновляет существующий секрет в базе данных.
 func (u *Secret) SaveSecret(login string, kind string, label string, data string, meta string, version int, sync int) error {
 	_, err := u.db.Exec(insertSecretSQL, login, kind, label, data, meta, version, sync)
 
 	return err
 }
 
+// GetSecretForSync получает список секретов, которые нужно синхронизировать с удалённым сервером.
 func (u *Secret) GetSecretForSync(login string) (*models.RequestSyncList, error) {
 	rows, err := u.db.Query(selectSecretForSyncSQL, login)
 	if err != nil {
