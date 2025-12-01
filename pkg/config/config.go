@@ -47,17 +47,23 @@ func (cnf *Config) ReadFromEnv() error {
 	return nil
 }
 
-func (cnf *Config) ReadFromFile() {
+func (cnf *Config) ReadFromFile() error {
 	for _, file := range cnf.getConfigFile() {
 		absPath, _ := filepath.Abs(file)
 		err := cleanenv.ReadConfig(absPath, cnf.Data)
 		if err != nil {
 			err2 := errors.Unwrap(err)
-			if err2 == nil || err2.Error() != "no such file or directory" {
-				fmt.Printf("Reading config was failed from: %v with err: %v\n", absPath, err)
+			if err2 == nil {
+				return err
+			} else if err2.Error() == "no such file or directory" {
+				continue
+			} else {
+				return err
 			}
 		}
 	}
+
+	return nil
 }
 
 func (cnf *Config) getConfigFile() []string {

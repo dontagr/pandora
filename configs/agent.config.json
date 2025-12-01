@@ -3,7 +3,8 @@
     "LogLevel": "DEBUG"
   },
   "Transport": {
-    "WaitForRetry": 2
+    "WaitForRetry": 2,
+    "TimeOut": 10
   },
   "HttpServing": {
     "Host": "http://localhost:8085/",

@@ -53,13 +53,13 @@ type (
 	}
 	// ResponceStoreLoad представляет ответ на запрос загрузки сущности из хранилища.
 	ResponceStoreLoad struct {
-		DT         time.Time         `json:"dt"`
-		ReveryData map[string]string `json:"-"`
-		Kind       string            `json:"kind"`
-		Label      string            `json:"label"`
-		Data       string            `json:"data"`
-		Meta       string            `json:"meta"`
-		Version    int               `json:"version"`
+		DT           time.Time         `json:"dt"`
+		RecoveryData map[string]string `json:"-"`
+		Kind         string            `json:"kind"`
+		Label        string            `json:"label"`
+		Data         string            `json:"data"`
+		Meta         string            `json:"meta"`
+		Version      int               `json:"version"`
 	}
 	// RequestSyncList представляет запрос на синхронизацию данных.
 	RequestSyncList struct {

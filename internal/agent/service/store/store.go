@@ -40,7 +40,7 @@ func (us *Service) Decrypt(resp *models.ResponceStoreLoad, reveryData any) error
 		return fmt.Errorf("getKind: %w", err)
 	}
 
-	resp.ReveryData, err = kindService.Decrypt(reveryData)
+	resp.RecoveryData, err = kindService.Decrypt(reveryData)
 	if err != nil {
 		return fmt.Errorf("decrypt: %w", err)
 	}
@@ -229,7 +229,7 @@ func (us *Service) LoadLocalSecret(login string, kind string, lable string) (*mo
 		return nil, fmt.Errorf("enrichResponceStoreLoad: %v", err)
 	}
 
-	loadSecret.Data = load.ReveryData
+	loadSecret.Data = load.RecoveryData
 
 	return loadSecret, nil
 }

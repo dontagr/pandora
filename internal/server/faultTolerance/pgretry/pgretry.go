@@ -3,7 +3,6 @@ package pgretry
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -64,37 +63,90 @@ func (pgr *PgxRetry) Exec(ctx context.Context, sql string, arguments ...interfac
 	return backoff.Retry(ctx, operation, backoff.WithBackOff(pgr.getBackOffOptions()), backoff.WithMaxTries(maxRetries))
 }
 
-func (pgr *PgxRetry) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	row := pgr.dbpool.QueryRow(ctx, sql, args...)
+func (pgr *PgxRetry) QueryRow(ctx context.Context, sql string, args ...interface{}) (pgx.Row, error) {
+	operation := func() (pgx.Row, error) {
+		row := pgr.dbpool.QueryRow(ctx, sql, args...)
 
-	return row
+		return row, nil
+	}
+
+	return backoff.Retry(ctx, operation, backoff.WithBackOff(pgr.getBackOffOptions()), backoff.WithMaxTries(maxRetries))
 }
 
 func (pgr *PgxRetry) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	rows, err := pgr.dbpool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при выполнении SQL: %w", err)
+	start := time.Now()
+	operation := func() (pgx.Rows, error) {
+		rows, err := pgr.dbpool.Query(ctx, sql, args...)
+
+		if err != nil {
+			end := time.Now()
+			duration := end.Sub(start)
+			var connectErr *pgconn.ConnectError
+			if errors.As(err, &connectErr) {
+				log.Debugf("ошибка подключения к базе; Пробуем еще раз, прошло времени: %v сек", duration.Seconds())
+
+				return rows, backoff.RetryAfter(retryInterval)
+			}
+
+			log.Debugf("ошибка фатальна; Прошло времени: %v сек", duration.Seconds())
+			return rows, backoff.Permanent(err)
+		}
+
+		return rows, nil
 	}
 
-	return rows, nil
+	return backoff.Retry(ctx, operation, backoff.WithBackOff(pgr.getBackOffOptions()), backoff.WithMaxTries(maxRetries))
 }
 
 func (pgr *PgxRetry) Begin(ctx context.Context) (pgx.Tx, error) {
-	tx, err := pgr.dbpool.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка начала транзакции: %w", err)
+	start := time.Now()
+	operation := func() (pgx.Tx, error) {
+		tx, err := pgr.dbpool.Begin(ctx)
+
+		if err != nil {
+			end := time.Now()
+			duration := end.Sub(start)
+			var connectErr *pgconn.ConnectError
+			if errors.As(err, &connectErr) {
+				log.Debugf("ошибка подключения к базе; Пробуем еще раз, прошло времени: %v сек", duration.Seconds())
+
+				return tx, backoff.RetryAfter(retryInterval)
+			}
+
+			log.Debugf("ошибка фатальна; Прошло времени: %v сек", duration.Seconds())
+			return tx, backoff.Permanent(err)
+		}
+
+		return tx, nil
 	}
 
-	return tx, nil
+	return backoff.Retry(ctx, operation, backoff.WithBackOff(pgr.getBackOffOptions()), backoff.WithMaxTries(maxRetries))
 }
 
 func (pgr *PgxRetry) Ping(ctx context.Context) error {
-	err := pgr.dbpool.Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("ошибка пинга: %w", err)
+	start := time.Now()
+	operation := func() (bool, error) {
+		err := pgr.dbpool.Ping(ctx)
+
+		if err != nil {
+			end := time.Now()
+			duration := end.Sub(start)
+			var connectErr *pgconn.ConnectError
+			if errors.As(err, &connectErr) {
+				log.Debugf("ошибка подключения к базе; Пробуем еще раз, прошло времени: %v сек", duration.Seconds())
+
+				return false, backoff.RetryAfter(retryInterval)
+			}
+
+			log.Debugf("ошибка фатальна; Прошло времени: %v сек", duration.Seconds())
+			return false, backoff.Permanent(err)
+		}
+
+		return true, nil
 	}
 
-	return nil
+	_, err := backoff.Retry(ctx, operation, backoff.WithBackOff(pgr.getBackOffOptions()), backoff.WithMaxTries(maxRetries))
+	return err
 }
 
 func (pgr *PgxRetry) getBackOffOptions() *backoff.ExponentialBackOff {

@@ -50,6 +50,7 @@ func (h *Handler) convertCustomErrorToServerCode(code int) int {
 	case customerror.Conflict:
 		return http.StatusConflict
 	default:
-		return 0
+		h.log.Warnf("undefind error code [%d]", code)
+		return http.StatusInternalServerError
 	}
 }

@@ -1,4 +1,4 @@
-package crypro
+package crypto
 
 import (
 	"bytes"

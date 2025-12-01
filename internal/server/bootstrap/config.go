@@ -22,8 +22,11 @@ func newConfig() (*configInternal.Config, error) {
 		DefaultFileNames: []string{"server.config.json"},
 	}
 
-	cnf.ReadFromFile()
-	err := cnf.ReadFromEnv()
+	err := cnf.ReadFromFile()
+	if err != nil {
+		return nil, fmt.Errorf("ReadFromFile: %v", err)
+	}
+	err = cnf.ReadFromEnv()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from env: %w", err)
 	}

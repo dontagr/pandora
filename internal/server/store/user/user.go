@@ -55,7 +55,12 @@ func (u *User) addShema(ctx context.Context) error {
 
 func (u *User) GetUser(login string) (*models.User, error) {
 	var user models.User
-	err := u.dbpool.QueryRow(context.Background(), searchUserSQL, login).Scan(
+	row, err := u.dbpool.QueryRow(context.Background(), searchUserSQL, login)
+	if err != nil {
+		return nil, err
+	}
+
+	err = row.Scan(
 		&user.ID,
 		&user.Login,
 		&user.PasswordHash,

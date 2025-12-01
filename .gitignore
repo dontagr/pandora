@@ -1,3 +1,5 @@
 /.idea/*
 test.txt
 pandora.db
+/cmd/agent/agent
+/cmd/server/server

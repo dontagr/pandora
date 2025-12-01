@@ -76,7 +76,7 @@ It's quite easy to start using it, just sign up and store you data`,
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			if err := cmd.Execute(); err != nil {
-				//				zlog.Errorf("Whoops. There was an error while executing the CLI '%s'", err)
+				zlog.Errorf("Whoops. There was an error while starting the CLI '%s'", err)
 
 				_ = shutdowner.Shutdown(fx.ExitCode(1))
 			}

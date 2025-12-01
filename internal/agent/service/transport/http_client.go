@@ -28,7 +28,7 @@ type HTTPManager struct {
 func NewHTTPManager(log *zap.SugaredLogger, cnf *config.Config) (*HTTPManager, error) {
 	manager := HTTPManager{
 		log:          log,
-		client:       &http.Client{Timeout: 3 * time.Second},
+		client:       &http.Client{Timeout: time.Duration(cnf.Transport.TimeOut) * time.Second},
 		waitForRetry: cnf.Transport.WaitForRetry,
 		serverHost:   cnf.HTTPServer.Host,
 		cnf:          cnf,

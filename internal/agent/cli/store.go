@@ -178,7 +178,7 @@ func NewStoreLoadCmd(client *transport.HTTPManager, service *store.Service) Gene
 
 					color.Set(color.FgHiBlue)
 					cmd.Println("Load from server secret was successfully, secret contains:")
-					cmd.Printf("You secret: %v\n", storeLoad.ReveryData)
+					cmd.Printf("You secret: %v\n", storeLoad.RecoveryData)
 					cmd.Printf("You meta: %v\n", storeLoad.Meta)
 					color.Unset()
 				} else if respoce.Status == http.StatusNotFound {
@@ -367,7 +367,7 @@ func saveSecret(cmd *cobra.Command, client *transport.HTTPManager, service *stor
 			}
 
 			magentaPrint(cmd, "Saving secret conflicts with the remote server data.")
-			cmd.Printf("Server data: {\n\tdata: \"%s\"\n\tmeta: \"%s\"\n\tdate: \"%s\"\n\tversion: \"%d\"\n}\n", storeLoad.ReveryData, storeLoad.Meta, storeLoad.DT, storeLoad.Version)
+			cmd.Printf("Server data: {\n\tdata: \"%s\"\n\tmeta: \"%s\"\n\tdate: \"%s\"\n\tversion: \"%d\"\n}\n", storeLoad.RecoveryData, storeLoad.Meta, storeLoad.DT, storeLoad.Version)
 
 			cyanPrint(cmd, "Please reply, would you like to overwrite the data on the server?")
 

@@ -35,6 +35,7 @@ type Logging struct {
 // Transport содержит параметры конфигурации для управления сетевыми параметрами.
 type Transport struct {
 	WaitForRetry int `json:"WaitForRetry" validate:"required"`
+	TimeOut      int `json:"TimeOut" validate:"required"`
 }
 
 // HTTPServer содержит параметры конфигурации для работы HTTP-сервера.

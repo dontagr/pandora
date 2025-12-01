@@ -28,9 +28,13 @@ func newConfig() (*configInternal.Config, error) {
 	}
 
 	// Загружает конфигурацию из файла
-	cnf.ReadFromFile()
+	err := cnf.ReadFromFile()
+	if err != nil {
+		return nil, fmt.Errorf("ReadFromFile: %v", err)
+	}
+
 	// Читает переменные окружения для переопределения или дополнения
-	err := cnf.ReadFromEnv()
+	err = cnf.ReadFromEnv()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from env: %w", err)
 	}

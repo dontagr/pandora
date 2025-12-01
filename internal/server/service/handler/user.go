@@ -81,7 +81,3 @@ func (h *Handler) getRequestUser(c echo.Context) (*models.RequestUser, *echo.HTT
 
 	return requestUser, nil
 }
-
-func (h *Handler) Test(c echo.Context) error {
-	return c.JSON(http.StatusOK, "Пользователь успешно проверен")
-}

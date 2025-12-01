@@ -118,7 +118,11 @@ func (s *Secret) GetSecret(userId int, kind string, label string) (*models.Secre
 		Kind:  kind,
 		Label: label,
 	}
-	err := s.dbpool.QueryRow(context.Background(), searchLabelSecretSQL, userId, kind, label).Scan(
+	row, err := s.dbpool.QueryRow(context.Background(), searchLabelSecretSQL, userId, kind, label)
+	if err != nil {
+		return nil, err
+	}
+	err = row.Scan(
 		&secret.Data,
 		&secret.Meta,
 		&secret.DT,
