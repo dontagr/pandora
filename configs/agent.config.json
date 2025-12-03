@@ -1,0 +1,20 @@
+{
+  "Logging": {
+    "LogLevel": "DEBUG"
+  },
+  "Transport": {
+    "WaitForRetry": 2,
+    "TimeOut": 10
+  },
+  "HttpServing": {
+    "Host": "http://localhost:8085/",
+    "Gzip": true
+  },
+  "DataBase": {
+    "Path": "pandora.db"
+  },
+  "Crypto": {
+    "PublicKey": "/Users/sastepo1/.ssh/jwtRS256.key.pem",
+    "PrivateKey": "/Users/sastepo1/.ssh/jwtRS256.key"
+  }
+}
